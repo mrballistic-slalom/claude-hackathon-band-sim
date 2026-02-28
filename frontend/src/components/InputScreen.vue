@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * InputScreen -- the first screen the user sees.
+ *
+ * Collects a nemesis name, three personality traits, and a petty-level slider,
+ * then emits a `submit` event with the completed {@link GenerateRequest}-shaped payload.
+ */
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const emit = defineEmits<{

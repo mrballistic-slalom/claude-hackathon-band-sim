@@ -1,12 +1,25 @@
 import { ref } from 'vue';
 import type { AgentMessage, BandMetadata } from '../types';
 
-interface SSEEvent {
+/** A single parsed SSE event with its type and raw data payload. */
+export interface SSEEvent {
+  /** Event type (e.g. "message", "metadata", "done", "error"). */
   type: string;
+  /** Raw JSON string carried in the `data:` field. */
   data: string;
 }
 
-function parseSSEBuffer(buffer: string): { parsed: SSEEvent[]; remaining: string } {
+/**
+ * Parse a raw SSE text buffer into discrete events.
+ *
+ * Events in SSE are separated by double newlines (`\n\n`).
+ * The last segment may be incomplete, so it is returned as `remaining`
+ * to be prepended to the next chunk.
+ *
+ * @param buffer - Accumulated raw SSE text.
+ * @returns An object containing `parsed` events and the `remaining` incomplete buffer.
+ */
+export function parseSSEBuffer(buffer: string): { parsed: SSEEvent[]; remaining: string } {
   const events: SSEEvent[] = [];
   const parts = buffer.split('\n\n');
   const remaining = parts.pop() || ''; // last part may be incomplete
@@ -30,6 +43,14 @@ function parseSSEBuffer(buffer: string): { parsed: SSEEvent[]; remaining: string
   return { parsed: events, remaining };
 }
 
+/**
+ * Composable that manages a Server-Sent Events stream for drama generation.
+ *
+ * Provides reactive refs for messages, metadata, streaming state, and errors,
+ * plus `connect` and `reset` methods.
+ *
+ * @returns Reactive SSE stream state and control functions.
+ */
 export function useSSEStream() {
   const messages = ref<AgentMessage[]>([]);
   const metadata = ref<BandMetadata | null>(null);
@@ -37,6 +58,12 @@ export function useSSEStream() {
   const isDone = ref(false);
   const error = ref<string | null>(null);
 
+  /**
+   * Open a POST-based SSE connection and incrementally parse events.
+   *
+   * @param url - API endpoint URL.
+   * @param body - JSON-serialisable request body.
+   */
   async function connect(url: string, body: object): Promise<void> {
     isStreaming.value = true;
     isDone.value = false;
@@ -84,6 +111,7 @@ export function useSSEStream() {
     }
   }
 
+  /** Reset all reactive state back to initial values. */
   function reset() {
     messages.value = [];
     metadata.value = null;

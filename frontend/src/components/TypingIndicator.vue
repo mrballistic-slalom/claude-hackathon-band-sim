@@ -7,6 +7,11 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * TypingIndicator -- animated three-dot indicator shown while an agent is "typing".
+ *
+ * @prop color - CSS colour applied to each dot.
+ */
 defineProps<{ color: string }>()
 </script>
 

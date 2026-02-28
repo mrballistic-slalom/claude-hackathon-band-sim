@@ -1,9 +1,23 @@
 <script setup lang="ts">
+/**
+ * ChatBubble -- renders a single agent message in the drama chat log.
+ *
+ * Displays the agent's name (colour-coded), an optional "reacting to" quote,
+ * and the message body inside a left-bordered card.
+ *
+ * @prop message - The agent message to render.
+ */
 import type { AgentMessage } from '../types'
 import { AGENT_COLORS, type AgentId } from '../types'
 
 defineProps<{ message: AgentMessage }>()
 
+/**
+ * Look up the UI colour for a given agent ID.
+ *
+ * @param agent - Agent identifier string.
+ * @returns Hex colour string, or a grey fallback for unknown agents.
+ */
 function getAgentColor(agent: string): string {
   return AGENT_COLORS[agent as AgentId] ?? '#888888'
 }

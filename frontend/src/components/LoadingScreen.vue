@@ -1,4 +1,9 @@
 <script setup lang="ts">
+/**
+ * LoadingScreen -- displayed while the backend generates the initial drama.
+ *
+ * Cycles through humorous status messages while showing a progress spinner.
+ */
 import { ref, onMounted, onUnmounted } from 'vue'
 
 const messages = [

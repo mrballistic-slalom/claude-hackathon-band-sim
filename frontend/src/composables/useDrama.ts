@@ -2,11 +2,20 @@ import { ref } from 'vue';
 import type { AgentMessage, BandMetadata, GenerateRequest } from '../types';
 import { useSSEStream } from './useSSEStream';
 
+/** The three possible UI screens in the drama flow. */
 export type Screen = 'input' | 'loading' | 'chat';
 
 // Use relative URL so CloudFront proxies to Lambda
 const API_BASE = '/api';
 
+/**
+ * Top-level composable that orchestrates the drama simulation lifecycle.
+ *
+ * Manages screen transitions, accumulated messages, band metadata,
+ * and the generate/escalate API calls.
+ *
+ * @returns Reactive state and action functions for the drama UI.
+ */
 export function useDrama() {
   const screen = ref<Screen>('input');
   const allMessages = ref<AgentMessage[]>([]);
@@ -19,6 +28,14 @@ export function useDrama() {
   // For tracking generate input (needed for escalation context)
   const generateInput = ref<GenerateRequest | null>(null);
 
+  /**
+   * Start a new drama session by calling the /generate endpoint.
+   *
+   * Transitions from the input screen to loading, then to the chat screen
+   * as messages begin arriving.
+   *
+   * @param input - The generate request payload with name, traits, and petty level.
+   */
   async function generate(input: GenerateRequest): Promise<void> {
     generateInput.value = input;
     frontpersonName.value = input.name;
@@ -59,6 +76,12 @@ export function useDrama() {
     isLoading.value = false;
   }
 
+  /**
+   * Escalate the drama by calling the /escalate endpoint with the current history.
+   *
+   * Increments the drama level and appends new messages to the conversation.
+   * No-ops if a request is already in flight.
+   */
   async function escalate(): Promise<void> {
     if (isLoading.value) return;
 
