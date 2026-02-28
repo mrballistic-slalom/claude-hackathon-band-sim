@@ -33,15 +33,18 @@
 
 /* Message slide-in from TransitionGroup */
 .message-enter-active {
-  transition: all 0.3s ease-out;
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
 }
 .message-enter-from {
-  transform: translateY(20px);
+  transform: translateY(10px);
   opacity: 0;
 }
 .message-enter-to {
   transform: translateY(0);
   opacity: 1;
+}
+.message-move {
+  transition: transform 0.3s ease;
 }
 
 /* Screen transitions */

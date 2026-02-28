@@ -1,9 +1,4 @@
 <script setup lang="ts">
-/**
- * LoadingScreen -- displayed while the backend generates the initial drama.
- *
- * Cycles through humorous status messages while showing a progress spinner.
- */
 import { ref, onMounted, onUnmounted } from 'vue'
 
 const messages = [
@@ -32,30 +27,55 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <v-container
-    class="d-flex flex-column align-center justify-center"
-    style="min-height: 100vh"
-  >
-    <div class="text-center">
-      <Transition name="fade" mode="out-in">
-        <p
-          :key="currentIndex"
-          class="font-headline text-h4 mb-8"
-        >
-          {{ messages[currentIndex] }}
-        </p>
-      </Transition>
-      <v-progress-circular
-        indeterminate
-        color="primary"
-        size="64"
-        width="6"
-      />
+  <div class="loading-backdrop">
+    <div class="loading-center">
+      <div class="glass-card loading-card">
+        <Transition name="fade" mode="out-in">
+          <p
+            :key="currentIndex"
+            class="font-headline text-h4 mb-8 text-center"
+          >
+            {{ messages[currentIndex] }}
+          </p>
+        </Transition>
+        <div class="d-flex justify-center">
+          <v-progress-circular
+            indeterminate
+            color="primary"
+            size="64"
+            width="6"
+          />
+        </div>
+      </div>
     </div>
-  </v-container>
+  </div>
 </template>
 
 <style scoped>
+.loading-backdrop {
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  background: #0a0a0a;
+  background-size: cover;
+  background-position: center;
+}
+
+.loading-center {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.loading-card {
+  width: 100%;
+  max-width: 480px;
+  padding: 40px 32px;
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.5s ease;

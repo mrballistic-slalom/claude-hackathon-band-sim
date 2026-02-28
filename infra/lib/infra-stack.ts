@@ -33,7 +33,10 @@ export class BandSimStack extends cdk.Stack {
     // Grant Bedrock model invocation to the agent runtime's role
     agentRuntime.addToRolePolicy(new iam.PolicyStatement({
       actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
-      resources: ['arn:aws:bedrock:*::foundation-model/anthropic.*'],
+      resources: [
+        'arn:aws:bedrock:*::foundation-model/anthropic.*',
+        'arn:aws:bedrock:*:*:inference-profile/us.anthropic.*',
+      ],
     }));
 
     // ---------------------------------------------------------------
@@ -72,7 +75,10 @@ export class BandSimStack extends cdk.Stack {
     // Also grant direct Bedrock access as fallback
     orchestrator.addToRolePolicy(new iam.PolicyStatement({
       actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
-      resources: ['arn:aws:bedrock:*::foundation-model/anthropic.*'],
+      resources: [
+        'arn:aws:bedrock:*::foundation-model/anthropic.*',
+        'arn:aws:bedrock:*:*:inference-profile/us.anthropic.*',
+      ],
     }));
 
     // ---------------------------------------------------------------

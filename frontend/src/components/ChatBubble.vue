@@ -1,55 +1,131 @@
 <script setup lang="ts">
-/**
- * ChatBubble -- renders a single agent message in the drama chat log.
- *
- * Displays the agent's name (colour-coded), an optional "reacting to" quote,
- * and the message body inside a left-bordered card.
- *
- * @prop message - The agent message to render.
- */
+import { computed } from 'vue'
 import type { AgentMessage } from '../types'
-import { AGENT_COLORS, type AgentId } from '../types'
+import { getAgentConfig } from '../config/agents'
+import { renderMarkdown } from '../composables/useMarkdown'
+import AgentAvatar from './AgentAvatar.vue'
 
-defineProps<{ message: AgentMessage }>()
+const props = defineProps<{ message: AgentMessage }>()
 
-/**
- * Look up the UI colour for a given agent ID.
- *
- * @param agent - Agent identifier string.
- * @returns Hex colour string, or a grey fallback for unknown agents.
- */
-function getAgentColor(agent: string): string {
-  return AGENT_COLORS[agent as AgentId] ?? '#888888'
-}
+const config = computed(() => getAgentConfig(props.message.agent))
 </script>
 
 <template>
-  <div class="chat-bubble mb-3" style="max-width: 80%">
-    <span
-      class="font-agent-name text-caption font-weight-bold d-block mb-1"
-      :style="{ color: getAgentColor(message.agent) }"
-    >
-      {{ message.agent_display_name }}
-    </span>
+  <div class="bubble-row">
+    <AgentAvatar :agent="message.agent" :size="36" />
 
-    <div
-      v-if="message.reacting_to"
-      class="text-caption font-italic text-medium-emphasis mb-1"
-    >
-      replying to {{ message.reacting_to.agent }}:
-      &ldquo;{{ message.reacting_to.excerpt }}&rdquo;
+    <div class="bubble-content" style="max-width: 80%">
+      <span
+        class="font-agent-name text-caption font-weight-bold"
+        :style="{ color: config.color }"
+      >
+        {{ message.agent_display_name }}
+      </span>
+
+      <div
+        v-if="message.reacting_to"
+        class="reacting-to"
+        :style="{ borderColor: `rgba(${config.colorRgb}, 0.3)` }"
+      >
+        replying to {{ message.reacting_to.agent }}:
+        &ldquo;{{ message.reacting_to.excerpt }}&rdquo;
+      </div>
+
+      <div
+        class="glass-bubble"
+        :style="{
+          background: `rgba(${config.colorRgb}, 0.08)`,
+          borderColor: `rgba(${config.colorRgb}, 0.15)`,
+        }"
+      >
+        <div class="markdown-body" v-html="renderMarkdown(message.content)" />
+      </div>
     </div>
-
-    <v-card
-      variant="flat"
-      rounded="lg"
-      class="pa-3"
-      :style="{
-        borderLeft: `4px solid ${getAgentColor(message.agent)}`,
-        backgroundColor: 'rgb(var(--v-theme-surface))',
-      }"
-    >
-      <span class="text-body-2">{{ message.content }}</span>
-    </v-card>
   </div>
 </template>
+
+<style scoped>
+.bubble-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.bubble-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reacting-to {
+  font-size: 0.75rem;
+  font-style: italic;
+  opacity: 0.6;
+  border-left: 2px solid;
+  padding-left: 8px;
+  margin-left: 2px;
+}
+
+/* Markdown content styles */
+.markdown-body :deep(p) {
+  margin: 0 0 0.4em;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.markdown-body :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.markdown-body :deep(code) {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.markdown-body :deep(pre) {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 10px 14px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 0.5em 0;
+}
+
+.markdown-body :deep(pre code) {
+  background: none;
+  padding: 0;
+}
+
+.markdown-body :deep(blockquote) {
+  border-left: 3px solid rgba(255, 255, 255, 0.15);
+  padding-left: 12px;
+  margin: 0.5em 0;
+  opacity: 0.8;
+}
+
+.markdown-body :deep(a) {
+  color: #39ff14;
+  text-decoration: none;
+}
+
+.markdown-body :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.markdown-body :deep(strong) {
+  font-weight: 700;
+}
+
+.markdown-body :deep(em) {
+  font-style: italic;
+}
+
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+  padding-left: 1.2em;
+  margin: 0.3em 0;
+  font-size: 0.875rem;
+}
+</style>
