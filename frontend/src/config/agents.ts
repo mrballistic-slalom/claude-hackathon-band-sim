@@ -1,4 +1,4 @@
-import type { AgentId } from '../types'
+import type { AgentId, Pronouns } from '../types'
 
 export interface AgentConfig {
   id: AgentId
@@ -47,6 +47,15 @@ export const AGENT_CONFIG: Record<AgentId, AgentConfig> = {
     colorRgb: '239, 68, 68',
     avatarUrl: null,
   },
+}
+
+export function setFrontpersonAvatar(pronouns: Pronouns): void {
+  const map: Record<Pronouns, string> = {
+    he: '/band_male.jpg',
+    she: '/band_female.jpg',
+    they: Math.random() < 0.5 ? '/band_male.jpg' : '/band_female.jpg',
+  }
+  AGENT_CONFIG.frontperson.avatarUrl = map[pronouns]
 }
 
 export function getAgentConfig(agent: string): AgentConfig {

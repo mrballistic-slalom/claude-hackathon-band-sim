@@ -28,6 +28,15 @@ onUnmounted(() => {
 
 <template>
   <div class="loading-backdrop">
+    <video
+      class="loading-video"
+      autoplay
+      loop
+      muted
+      playsinline
+      src="/background.mp4"
+    />
+    <div class="loading-overlay" />
     <div class="loading-center">
       <div class="glass-card loading-card">
         <Transition name="fade" mode="out-in">
@@ -57,12 +66,29 @@ onUnmounted(() => {
   height: 100dvh;
   width: 100%;
   overflow: hidden;
+  position: relative;
   background: #0a0a0a;
-  background-size: cover;
-  background-position: center;
+}
+
+.loading-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1;
 }
 
 .loading-center {
+  position: relative;
+  z-index: 2;
   height: 100%;
   display: flex;
   align-items: center;

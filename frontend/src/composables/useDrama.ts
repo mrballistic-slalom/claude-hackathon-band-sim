@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import type { AgentMessage, BandMetadata, GenerateRequest } from '../types';
 import { useSSEStream } from './useSSEStream';
+import { setFrontpersonAvatar } from '../config/agents';
 
 /** The three possible UI screens in the drama flow. */
 export type Screen = 'input' | 'loading' | 'chat';
@@ -39,6 +40,7 @@ export function useDrama() {
   async function generate(input: GenerateRequest): Promise<void> {
     generateInput.value = input;
     frontpersonName.value = input.name;
+    setFrontpersonAvatar(input.pronouns);
     screen.value = 'loading';
 
     const stream = useSSEStream();
@@ -89,15 +91,13 @@ export function useDrama() {
     isLoading.value = true;
 
     const stream = useSSEStream();
+    const baseCount = allMessages.value.length;
 
     const checkInterval = setInterval(() => {
-      // Append new messages from this round
-      const existingCount = allMessages.value.length;
       const newMessages = stream.messages.value;
       if (newMessages.length > 0) {
-        // Merge: keep existing + add new from stream
         allMessages.value = [
-          ...allMessages.value.slice(0, existingCount),
+          ...allMessages.value.slice(0, baseCount),
           ...newMessages,
         ];
       }
@@ -109,17 +109,16 @@ export function useDrama() {
 
     await stream.connect(`${API_BASE}/escalate`, {
       session_id: sessionId.value,
-      history: allMessages.value,
+      history: allMessages.value.slice(0, baseCount),
       drama_level: dramaLevel.value,
       band_metadata: bandMetadata.value,
     });
 
     clearInterval(checkInterval);
 
-    // Final sync - append stream messages to existing
-    const existingCount = allMessages.value.length - stream.messages.value.length;
+    // Final sync
     allMessages.value = [
-      ...allMessages.value.slice(0, existingCount > 0 ? existingCount : allMessages.value.length),
+      ...allMessages.value.slice(0, baseCount),
       ...stream.messages.value,
     ];
     isLoading.value = false;

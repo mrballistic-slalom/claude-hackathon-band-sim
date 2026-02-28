@@ -25,6 +25,9 @@ export interface BandMetadata {
   influences: string[];
 }
 
+/** Pronoun choice for the frontperson. */
+export type Pronouns = 'he' | 'she' | 'they';
+
 /** Payload sent to the /generate endpoint to kick off a new drama session. */
 export interface GenerateRequest {
   /** Name of the nemesis / frontperson. */
@@ -33,6 +36,8 @@ export interface GenerateRequest {
   traits: [string, string, string];
   /** How petty the drama should be, 1-10. */
   petty_level: number;
+  /** Pronoun choice (client-side only, used for avatar). */
+  pronouns: Pronouns;
 }
 
 /** Payload sent to the /escalate endpoint to ramp up the drama. */
