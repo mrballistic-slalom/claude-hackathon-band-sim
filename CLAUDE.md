@@ -37,9 +37,15 @@ npm run build
 # Infra (CDK)
 cd infra
 npm install
+npx cdk bootstrap    # First-time only: bootstrap CDK in AWS account
 npx cdk synth        # Synthesize CloudFormation template
 npx cdk diff         # Preview changes
 npx cdk deploy       # Deploy stack to AWS
+npx cdk deploy --hotswap  # Fast iteration (skip CloudFormation, patch directly)
+npx cdk destroy      # Tear down stack
+
+# Full deploy (build frontend first, then deploy everything)
+cd frontend && npm run build && cd ../infra && npx cdk deploy --require-approval never
 ```
 
 ## Architecture
