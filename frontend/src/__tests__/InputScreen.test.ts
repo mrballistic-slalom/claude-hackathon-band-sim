@@ -25,8 +25,8 @@ describe('InputScreen', () => {
     const allInputs = wrapper.findAll('input[type="text"]');
     expect(allInputs.length).toBe(4);
 
-    // Submit button
-    const btn = wrapper.find('button');
+    // Submit button (the v-btn, not pronoun chips)
+    const btn = wrapper.find('.v-btn');
     expect(btn.exists()).toBe(true);
     expect(btn.text()).toContain('Turn Them Into a Band');
   });
@@ -34,11 +34,11 @@ describe('InputScreen', () => {
   it('disables the submit button when fields are empty', () => {
     const wrapper = mountInputScreen();
 
-    const btn = wrapper.find('button');
+    const btn = wrapper.find('.v-btn');
     expect(btn.attributes('disabled')).toBeDefined();
   });
 
-  it('enables the submit button when all fields are filled', async () => {
+  it('enables the submit button when all fields are filled and pronouns selected', async () => {
     const wrapper = mountInputScreen();
 
     const inputs = wrapper.findAll('input[type="text"]');
@@ -48,7 +48,11 @@ describe('InputScreen', () => {
     await inputs[2]!.setValue('late');
     await inputs[3]!.setValue('rude');
 
-    const btn = wrapper.find('button');
+    // Select pronouns
+    const pronounBtn = wrapper.find('.pronoun-chip');
+    await pronounBtn.trigger('click');
+
+    const btn = wrapper.find('.v-btn');
     expect(btn.attributes('disabled')).toBeUndefined();
   });
 });

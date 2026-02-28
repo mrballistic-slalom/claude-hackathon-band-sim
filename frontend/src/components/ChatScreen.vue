@@ -49,6 +49,21 @@ const typingColor = AGENT_COLORS[agentIds[Math.floor(Math.random() * agentIds.le
 
         <div ref="scrollAnchor" class="scroll-anchor" />
       </div>
+
+      <!-- Mobile bottom bar -->
+      <div class="mobile-bottom-bar glass-card">
+        <v-btn
+          color="secondary"
+          class="escalate-btn"
+          :disabled="isLoading"
+          @click="emit('escalate')"
+        >
+          Escalate Drama
+        </v-btn>
+        <span class="text-caption text-medium-emphasis">
+          Drama Level: <strong style="color: #ff1493">{{ dramaLevel }}</strong>
+        </span>
+      </div>
     </div>
 
     <!-- Sidebar -->
@@ -81,6 +96,30 @@ const typingColor = AGENT_COLORS[agentIds[Math.floor(Math.random() * agentIds.le
   flex: 1;
   overflow-y: auto;
   padding: 24px;
+  padding-bottom: 16px;
+}
+
+.mobile-bottom-bar {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .mobile-bottom-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    margin: 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    flex-shrink: 0;
+  }
+
+  .chat-messages {
+    padding-bottom: 8px;
+  }
 }
 
 .scroll-anchor {

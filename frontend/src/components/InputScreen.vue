@@ -87,7 +87,7 @@ onUnmounted(() => {
           class="mb-2"
         />
 
-        <v-row dense>
+        <v-row density="comfortable">
           <v-col cols="4">
             <v-text-field
               v-model="traits[0]"
@@ -142,7 +142,7 @@ onUnmounted(() => {
           thumb-label="always"
           color="secondary"
           label="Petty Level"
-          class="mt-4 mb-6"
+          class="mt-4 mb-6 petty-slider"
         />
 
         <v-btn
@@ -245,5 +245,17 @@ onUnmounted(() => {
   font-size: 0.7rem;
   opacity: 0.5;
   font-style: italic;
+}
+
+/* Move thumb label below the slider and make it readable */
+.petty-slider :deep(.v-slider-thumb__label) {
+  top: 32px;
+  bottom: auto;
+  transform: translateX(-50%) rotate(180deg);
+  color: #fff;
+}
+
+.petty-slider :deep(.v-slider-thumb__label > div) {
+  transform: rotate(180deg);
 }
 </style>
