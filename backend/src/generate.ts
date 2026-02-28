@@ -1,4 +1,4 @@
-import { GenerateRequest, AgentMessage, BandMetadata } from './types';
+import { GenerateRequest } from './types';
 
 export async function handleGenerate(
   input: GenerateRequest,
