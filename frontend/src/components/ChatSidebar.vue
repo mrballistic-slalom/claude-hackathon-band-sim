@@ -64,16 +64,16 @@ const agents = Object.values(AGENT_CONFIG)
     </div>
 
     <!-- Drama Controls -->
-    <div class="sidebar-section sidebar-controls">
-      <div class="drama-display">
-        <span class="text-body-2 text-medium-emphasis">Drama Level</span>
-        <span
-          class="drama-number font-headline"
-          :class="{ 'drama-shake': dramaShake }"
-        >
-          {{ dramaLevel }}
-        </span>
-      </div>
+    <div class="glass-card sidebar-section sidebar-controls">
+      <span class="text-overline text-medium-emphasis text-center" style="letter-spacing: 2px">
+        DRAMA LEVEL
+      </span>
+      <span
+        class="drama-number font-headline text-center"
+        :class="{ 'drama-shake': dramaShake }"
+      >
+        {{ dramaLevel }}
+      </span>
 
       <v-btn
         block
@@ -86,7 +86,7 @@ const agents = Object.values(AGENT_CONFIG)
         Escalate Drama
       </v-btn>
 
-      <p class="text-caption text-medium-emphasis text-center" style="opacity: 0.5">
+      <p class="text-caption text-medium-emphasis text-center mb-0" style="opacity: 0.5">
         Each click makes it worse.
       </p>
     </div>
@@ -141,16 +141,11 @@ const agents = Object.values(AGENT_CONFIG)
 .sidebar-controls {
   margin-top: auto;
   gap: 12px;
-}
-
-.drama-display {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
 }
 
 .drama-number {
-  font-size: 2rem;
+  font-size: 3.5rem;
   color: #ff1493;
   line-height: 1;
 }
