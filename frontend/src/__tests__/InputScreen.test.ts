@@ -43,10 +43,10 @@ describe('InputScreen', () => {
 
     const inputs = wrapper.findAll('input[type="text"]');
     // inputs[0] = name, inputs[1-3] = traits
-    await inputs[0].setValue('Dave');
-    await inputs[1].setValue('loud');
-    await inputs[2].setValue('late');
-    await inputs[3].setValue('rude');
+    await inputs[0]!.setValue('Dave');
+    await inputs[1]!.setValue('loud');
+    await inputs[2]!.setValue('late');
+    await inputs[3]!.setValue('rude');
 
     const btn = wrapper.find('button');
     expect(btn.attributes('disabled')).toBeUndefined();
