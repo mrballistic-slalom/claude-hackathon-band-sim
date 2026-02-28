@@ -58,6 +58,13 @@ Each agent is powered by Claude Sonnet (via Amazon Bedrock) and orchestrated by 
 
 ---
 
+## 🌐 Live Demo
+
+- **App:** https://d3e8x2z1agn282.cloudfront.net
+- **API:** https://pg3xfop6mbvqbsjvwsxtd637iq0vjurj.lambda-url.us-east-2.on.aws/
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites

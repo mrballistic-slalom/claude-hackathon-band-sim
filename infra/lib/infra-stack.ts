@@ -59,7 +59,7 @@ export class BandSimStack extends cdk.Stack {
       invokeMode: lambda.InvokeMode.RESPONSE_STREAM,
       cors: {
         allowedOrigins: ['*'],
-        allowedMethods: [lambda.HttpMethod.POST, lambda.HttpMethod.OPTIONS],
+        allowedMethods: [lambda.HttpMethod.ALL],
         allowedHeaders: ['Content-Type'],
       },
     });
