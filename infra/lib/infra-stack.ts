@@ -4,7 +4,7 @@ import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import { NodejsFunction, OutputFormat } from 'aws-cdk-lib/aws-lambda-nodejs';
+// Using pre-built backend bundle instead of NodejsFunction to avoid Docker bundling issues
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as agentcore from '@aws-cdk/aws-bedrock-agentcore-alpha';
@@ -39,20 +39,15 @@ export class BandSimStack extends cdk.Stack {
     // ---------------------------------------------------------------
     // 2. Lambda Function — NodejsFunction for auto-bundling
     // ---------------------------------------------------------------
-    const orchestrator = new NodejsFunction(this, 'Orchestrator', {
-      entry: path.join(__dirname, '../../backend/src/handler.ts'),
-      handler: 'handler',
+    const orchestrator = new lambda.Function(this, 'Orchestrator', {
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../backend/dist')),
+      handler: 'handler.handler',
       runtime: lambda.Runtime.NODEJS_20_X,
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
       environment: {
         AGENT_RUNTIME_ARN: agentRuntime.agentRuntimeArn,
         AWS_REGION_NAME: cdk.Stack.of(this).region,
-      },
-      bundling: {
-        format: OutputFormat.CJS,
-        target: 'node20',
-        externalModules: ['@aws-sdk/*'],
       },
     });
 
