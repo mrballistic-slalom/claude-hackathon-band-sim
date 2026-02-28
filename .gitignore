@@ -1,0 +1,49 @@
+# Node/Vue
+node_modules/
+dist/
+.env
+.env.*
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# AWS CDK
+cdk.out/
+*.tsbuildinfo
+
+# AWS credentials and config
+.aws/
+
+# Lambda build artifacts
+backend/dist/
+backend/node_modules/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+ENV/
+
+# VSCode
+.vscode/
+
+# Mac system files
+Icon?
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Misc
+coverage/
+.idea/
+*.swp
+
+# Ignore local test data
+*.local.json
+*.local.yaml
