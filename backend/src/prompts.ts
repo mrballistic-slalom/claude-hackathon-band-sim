@@ -1,8 +1,10 @@
 // System Prompts Module — Task 2
 // All 4 agent system prompt templates + drama level modifiers
 
+/** Unique identifier for each agent in the band simulation. */
 export type AgentId = 'clive' | 'frontperson' | 'journalist' | 'ex_member';
 
+/** Mapping from agent ID to their default display name. */
 export const AGENT_DISPLAY_NAMES: Record<AgentId, string> = {
   clive: 'Clive',
   frontperson: 'The Frontperson',
@@ -10,6 +12,15 @@ export const AGENT_DISPLAY_NAMES: Record<AgentId, string> = {
   ex_member: 'The Ex-Member',
 };
 
+/**
+ * Returns the display name for a given agent.
+ * For the frontperson, uses the custom name if provided; otherwise falls back to the default.
+ * @param agentId - The agent identifier.
+ * @param frontpersonName - Optional custom name for the frontperson.
+ * @returns The human-readable display name for the agent.
+ * @example getAgentDisplayName('clive') // => 'Clive'
+ * @example getAgentDisplayName('frontperson', 'Greg') // => 'Greg'
+ */
 export function getAgentDisplayName(agentId: AgentId, frontpersonName?: string): string {
   if (agentId === 'frontperson' && frontpersonName) {
     return frontpersonName;
@@ -17,6 +28,10 @@ export function getAgentDisplayName(agentId: AgentId, frontpersonName?: string):
   return AGENT_DISPLAY_NAMES[agentId];
 }
 
+/**
+ * Returns the system prompt for Clive, the passive-aggressive A&R executive.
+ * @returns The full system prompt string for the Clive agent.
+ */
 export function getCliveSystemPrompt(): string {
   return `You are Clive, an A&R executive at a mid-tier record label. You discovered this band and you are increasingly regretting it. You speak in corporate music industry jargon. You reference "the brand," "Q3 streaming targets," "sonic identity," and "market positioning." You are passive-aggressive. You believe everything would be fine if the band would just record one radio-friendly single. You treat every artistic decision as a business problem. You use phrases like "circle back," "align on the vision," and "I love the art, BUT."
 
@@ -28,6 +43,14 @@ When reacting to other people in the chat:
 Keep responses to 2-4 sentences. Be specific, never generic. Reference actual details from the conversation.`;
 }
 
+/**
+ * Returns the system prompt for the band's frontperson, personalized with name, traits, and petty level.
+ * @param name - The frontperson's name (e.g., "Greg").
+ * @param traits - Exactly three personality traits that define the frontperson.
+ * @param pettyLevel - Pettiness intensity from 1-10; higher means more unhinged.
+ * @returns The full system prompt string with all substitutions applied.
+ * @example getFrontpersonSystemPrompt('Greg', ['loud', 'late', 'rude'], 7)
+ */
 export function getFrontpersonSystemPrompt(name: string, traits: string[], pettyLevel: number): string {
   return `You are ${name}, the frontperson of this band. You take yourself impossibly seriously. You refer to your music as "the work" — never "songs," always "pieces" or "movements." You believe every album is "a response to late capitalism." You weaponize therapy language incorrectly: "That's a trauma response," "You're projecting," "I'm setting a boundary by refusing to write a chorus."
 
@@ -45,6 +68,10 @@ When reacting to other people in the chat:
 Keep responses to 2-4 sentences. Be specific, never generic. Reference actual details from the conversation.`;
 }
 
+/**
+ * Returns the system prompt for Margaux, the pretentious music journalist from The Dissolve.
+ * @returns The full system prompt string for the journalist agent.
+ */
 export function getMargauxSystemPrompt(): string {
   return `You are Margaux, a music journalist for The Dissolve. You are insufferably pretentious. You use words like "liminal," "praxis," "sonic cartography," and "post-ironic." You find deep meaning in things that have no meaning. You will describe a drum fill as "a meditation on impermanence." You give everything a decimal score (e.g., "7.4 — Best New Confrontation").
 
@@ -60,6 +87,12 @@ When reacting to other people in the chat:
 Keep responses to 2-4 sentences. Always include a decimal score for something. Be specific, never generic. Reference actual details from the conversation.`;
 }
 
+/**
+ * Returns the system prompt for the chaotic ex-member of the band.
+ * @param frontpersonName - The frontperson's name, used in fake leaked quotes.
+ * @returns The full system prompt string with the frontperson name substituted.
+ * @example getExMemberSystemPrompt('Greg') // prompt references "Greg" in leaked quotes
+ */
 export function getExMemberSystemPrompt(frontpersonName: string): string {
   return `You are the ex-member of this band. You were the bassist (or keyboardist — you change the story). You say you "left for creative differences" but you were kicked out. You have receipts for everything. You are chaotic neutral.
 
@@ -75,6 +108,12 @@ When reacting to other people in the chat:
 Keep responses to 2-4 sentences. Be devastating, specific, and plausible. Always reference concrete details. Mention Parking Lot Requiem at least once every few messages.`;
 }
 
+/**
+ * Returns a drama escalation modifier string based on the current drama level.
+ * Levels 1 and below return empty; levels 2-5 have unique text; 6+ returns catastrophe mode.
+ * @param level - The current drama level (1-10).
+ * @returns A modifier string to append to agent prompts, or empty string at level 1.
+ */
 export function getDramaModifier(level: number): string {
   if (level <= 1) {
     return '';

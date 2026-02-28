@@ -1,9 +1,21 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 import { AgentMessage } from './types';
 
+/** Bedrock runtime client, configured from AWS_REGION env var (defaults to us-east-1). */
 const client = new BedrockRuntimeClient({ region: process.env.AWS_REGION || 'us-east-1' });
+
+/** Model ID for the Claude model to invoke, configurable via MODEL_ID env var. */
 const MODEL_ID = process.env.MODEL_ID || 'us.anthropic.claude-sonnet-4-20250514-v1:0';
 
+/**
+ * Invokes a Claude model via AWS Bedrock to generate a response for one agent.
+ * Formats conversation history as context, appends the current instruction,
+ * and returns the model's text response.
+ * @param systemPrompt - The agent's system prompt defining its persona.
+ * @param messages - Prior conversation messages for context.
+ * @param instruction - The current turn instruction for the agent.
+ * @returns The generated text content, or null if the call fails.
+ */
 export async function callAgent(
   systemPrompt: string,
   messages: AgentMessage[],

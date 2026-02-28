@@ -10,10 +10,20 @@ import { handleGenerate } from './generate';
 import { handleEscalate } from './escalate';
 import { GenerateRequest, EscalateRequest } from './types';
 
+/**
+ * Writes a Server-Sent Event (SSE) to the response stream.
+ * @param stream - The Lambda response stream to write to.
+ * @param eventType - The SSE event type (e.g., "agent_message", "error", "done").
+ * @param data - The data payload, serialized as JSON.
+ */
 function writeSSE(stream: any, eventType: string, data: any): void {
   stream.write(`event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`);
 }
 
+/**
+ * Lambda streaming response handler. Routes incoming requests to the appropriate
+ * handler (/api/generate or /api/escalate) and streams SSE responses back to the client.
+ */
 export const handler = awslambda.streamifyResponse(
   async (event: any, responseStream: any, _context: any) => {
     const metadata = {
