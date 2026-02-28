@@ -18,7 +18,7 @@ export const AGENT_CONFIG: Record<AgentId, AgentConfig> = {
     role: 'A&R Executive',
     color: '#4682b4',
     colorRgb: '70, 130, 180',
-    avatarUrl: null,
+    avatarUrl: '/manager.jpg',
   },
   frontperson: {
     id: 'frontperson',
@@ -36,7 +36,7 @@ export const AGENT_CONFIG: Record<AgentId, AgentConfig> = {
     role: 'Music Journalist',
     color: '#f59e0b',
     colorRgb: '245, 158, 11',
-    avatarUrl: null,
+    avatarUrl: '/margeaux.jpg',
   },
   ex_member: {
     id: 'ex_member',
@@ -45,7 +45,7 @@ export const AGENT_CONFIG: Record<AgentId, AgentConfig> = {
     role: 'Former Bassist',
     color: '#ef4444',
     colorRgb: '239, 68, 68',
-    avatarUrl: null,
+    avatarUrl: '/old-band-member.jpg',
   },
 }
 
