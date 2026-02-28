@@ -1,0 +1,55 @@
+/* Escalate button pulse glow */
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(255, 20, 147, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(255, 20, 147, 0.8),
+      0 0 40px rgba(255, 20, 147, 0.4);
+  }
+}
+.escalate-btn {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Drama counter shake */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px) rotate(-2deg);
+  }
+  75% {
+    transform: translateX(4px) rotate(2deg);
+  }
+}
+.drama-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+/* Message slide-in from TransitionGroup */
+.message-enter-active {
+  transition: all 0.3s ease-out;
+}
+.message-enter-from {
+  transform: translateY(20px);
+  opacity: 0;
+}
+.message-enter-to {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Screen transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}

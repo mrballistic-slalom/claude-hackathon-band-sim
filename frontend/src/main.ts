@@ -10,6 +10,7 @@ import * as directives from 'vuetify/directives'
 
 // Global styles
 import './styles/global.css'
+import './styles/animations.css'
 
 const bandSimDark = {
   dark: true,
