@@ -99,8 +99,9 @@ export async function handleEscalate(
       ? input.petty_level
       : 5;
 
-  // Track this round's new messages
+  // Track this round's new messages and which targets have been used this round
   const roundMessages: AgentMessage[] = [];
+  const roundTargets: Array<{ agent: string; excerpt: string }> = [];
   let anySuccess = false;
 
   // 4. Process each selected agent sequentially
@@ -114,18 +115,23 @@ export async function handleEscalate(
       continue;
     }
 
-    // b. Pick a random message, preferring ones this agent hasn't reacted to yet
+    // b. Pick a random message, avoiding ones this agent already reacted to
+    //    AND ones other agents already targeted this round
     const previousReactions = allMessages
       .filter((m) => m.agent === agentId && m.reacting_to)
       .map((m) => m.reacting_to!);
+    const allExclusions = [...previousReactions, ...roundTargets];
     const freshMessages = otherMessages.filter((candidate) => {
       const candidateExcerpt = candidate.content.substring(0, 100);
-      return !previousReactions.some(
+      return !allExclusions.some(
         (r) => r.agent === candidate.agent && r.excerpt === candidateExcerpt
       );
     });
     const pool = freshMessages.length > 0 ? freshMessages : otherMessages;
     const targetMessage = pool[Math.floor(Math.random() * pool.length)];
+
+    // Track this target so other agents in this round pick different messages
+    roundTargets.push({ agent: targetMessage.agent, excerpt: targetMessage.content.substring(0, 100) });
 
     // c. Build instruction (truncate content to prevent prompt stuffing)
     const excerpt = targetMessage.content.substring(0, 200);

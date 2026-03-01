@@ -56,7 +56,7 @@ export async function handleGenerate(
       agent: 'clive' as AgentId,
       agent_display_name: getAgentDisplayName('clive'),
       content: cliveResponse,
-      reacting_to: null,
+      reacting_to: null, // Clive initiates, no prior message to react to
     };
     messages.push(cliveMessage);
     writeSSE('message', cliveMessage);
@@ -72,11 +72,14 @@ export async function handleGenerate(
     anySuccess = true;
 
     // 7. Write Frontperson's message SSE event
+    const cliveMsg = messages.find((m) => m.agent === 'clive');
     const frontpersonMessage: AgentMessage = {
       agent: 'frontperson' as AgentId,
       agent_display_name: getAgentDisplayName('frontperson', input.name),
       content: frontpersonResponse,
-      reacting_to: null,
+      reacting_to: cliveMsg
+        ? { agent: cliveMsg.agent, excerpt: cliveMsg.content.substring(0, 100) }
+        : null,
     };
     messages.push(frontpersonMessage);
     writeSSE('message', frontpersonMessage);
@@ -92,11 +95,14 @@ export async function handleGenerate(
     anySuccess = true;
 
     // 9. Write Margaux's message SSE event
+    const lastMsg = messages[messages.length - 1];
     const margauxMessage: AgentMessage = {
       agent: 'journalist' as AgentId,
       agent_display_name: getAgentDisplayName('journalist'),
       content: margauxResponse,
-      reacting_to: null,
+      reacting_to: lastMsg
+        ? { agent: lastMsg.agent, excerpt: lastMsg.content.substring(0, 100) }
+        : null,
     };
     messages.push(margauxMessage);
     writeSSE('message', margauxMessage);
@@ -112,11 +118,14 @@ export async function handleGenerate(
     anySuccess = true;
 
     // 11. Write Ex-Member's message SSE event
+    const lastMsg2 = messages[messages.length - 1];
     const exMemberMessage: AgentMessage = {
       agent: 'ex_member' as AgentId,
       agent_display_name: getAgentDisplayName('ex_member'),
       content: exMemberResponse,
-      reacting_to: null,
+      reacting_to: lastMsg2
+        ? { agent: lastMsg2.agent, excerpt: lastMsg2.content.substring(0, 100) }
+        : null,
     };
     messages.push(exMemberMessage);
     writeSSE('message', exMemberMessage);
