@@ -6,6 +6,13 @@ marked.setOptions({
   gfm: true,
 })
 
+DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  if (node.tagName === 'A') {
+    node.setAttribute('target', '_blank')
+    node.setAttribute('rel', 'noopener noreferrer')
+  }
+})
+
 const ALLOWED_TAGS = [
   'p', 'br', 'strong', 'em', 'b', 'i', 'code', 'pre',
   'blockquote', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3',

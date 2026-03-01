@@ -9,6 +9,7 @@ declare const awslambda: {
 import { handleGenerate } from './generate';
 import { handleEscalate } from './escalate';
 import { GenerateRequest, EscalateRequest } from './types';
+import { validateGenerateRequest, validateEscalateRequest } from './validation';
 
 /**
  * Writes a Server-Sent Event (SSE) to the response stream.
@@ -26,6 +27,38 @@ function writeSSE(stream: any, eventType: string, data: any): void {
  */
 export const handler = awslambda.streamifyResponse(
   async (event: any, responseStream: any, _context: any) => {
+    const method = event.requestContext?.http?.method || '';
+    const path = event.rawPath || event.requestContext?.http?.path || '';
+
+    // Handle CORS preflight
+    if (method === 'OPTIONS') {
+      responseStream = awslambda.HttpResponseStream.from(responseStream, {
+        statusCode: 204,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        },
+      });
+      responseStream.end();
+      return;
+    }
+
+    // Enforce POST method for all API endpoints
+    if (method !== 'POST') {
+      responseStream = awslambda.HttpResponseStream.from(responseStream, {
+        statusCode: 405,
+        headers: {
+          'Content-Type': 'application/json',
+          'Allow': 'POST, OPTIONS',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+      responseStream.write(JSON.stringify({ message: 'Method not allowed' }));
+      responseStream.end();
+      return;
+    }
+
     const metadata = {
       statusCode: 200,
       headers: {
@@ -42,24 +75,31 @@ export const handler = awslambda.streamifyResponse(
 
     try {
       const body = JSON.parse(event.body || '{}');
-      const path = event.rawPath || event.requestContext?.http?.path || '';
-
-      if (event.requestContext?.http?.method === 'OPTIONS') {
-        responseStream.end();
-        return;
-      }
 
       const sseFn = (eventType: string, data: any) => writeSSE(responseStream, eventType, data);
 
-      if (path.includes('/api/generate')) {
+      if (path === '/api/generate') {
+        const validationError = validateGenerateRequest(body);
+        if (validationError) {
+          writeSSE(responseStream, 'error', { message: 'Bad request' });
+          responseStream.end();
+          return;
+        }
         await handleGenerate(body as GenerateRequest, sseFn);
-      } else if (path.includes('/api/escalate')) {
+      } else if (path === '/api/escalate') {
+        const validationError = validateEscalateRequest(body);
+        if (validationError) {
+          writeSSE(responseStream, 'error', { message: 'Bad request' });
+          responseStream.end();
+          return;
+        }
         await handleEscalate(body as EscalateRequest, sseFn);
       } else {
         writeSSE(responseStream, 'error', { message: 'Unknown route' });
       }
     } catch (err: any) {
-      writeSSE(responseStream, 'error', { message: err.message || 'Internal error' });
+      console.error('Handler error:', err);
+      writeSSE(responseStream, 'error', { message: 'Internal server error' });
     }
 
     responseStream.end();

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 "Make My Enemy a Band" — a hackathon web app that turns a person into an absurdly over-serious indie band. Four AI agents (Clive the A&R exec, the Frontperson, Margaux the journalist, the Ex-Member) argue in a group chat. Users click "Escalate Drama" to trigger more rounds of chaos.
 
-The PRD is in `make-my-enemy-a-band-PRD.md` — it contains the full agent system prompts, API contracts, and UI spec.
+The PRD is in `docs/make-my-enemy-a-band-PRD.md` — it contains the full agent system prompts, API contracts, and UI spec.
 
 ## Tech Stack
 

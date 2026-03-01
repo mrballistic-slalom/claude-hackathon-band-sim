@@ -26,9 +26,6 @@ export function useDrama() {
   const frontpersonName = ref('');
   const sessionId = ref(crypto.randomUUID());
 
-  // For tracking generate input (needed for escalation context)
-  const generateInput = ref<GenerateRequest | null>(null);
-
   /**
    * Start a new drama session by calling the /generate endpoint.
    *
@@ -38,7 +35,6 @@ export function useDrama() {
    * @param input - The generate request payload with name, traits, and petty level.
    */
   async function generate(input: GenerateRequest): Promise<void> {
-    generateInput.value = input;
     frontpersonName.value = input.name;
     setFrontpersonAvatar(input.pronouns);
     screen.value = 'loading';

@@ -80,7 +80,11 @@ export function useSSEStream() {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      const reader = response.body!.getReader();
+      if (!response.body) {
+        throw new Error('Response has no body');
+      }
+
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
 
@@ -93,19 +97,23 @@ export function useSSEStream() {
         buffer = result.remaining;
 
         for (const event of result.parsed) {
-          if (event.type === 'message') {
-            messages.value = [...messages.value, JSON.parse(event.data)];
-          } else if (event.type === 'metadata') {
-            metadata.value = JSON.parse(event.data);
-          } else if (event.type === 'done') {
-            isDone.value = true;
-          } else if (event.type === 'error') {
-            error.value = JSON.parse(event.data).message;
+          try {
+            if (event.type === 'message') {
+              messages.value = [...messages.value, JSON.parse(event.data)];
+            } else if (event.type === 'metadata') {
+              metadata.value = JSON.parse(event.data);
+            } else if (event.type === 'done') {
+              isDone.value = true;
+            } else if (event.type === 'error') {
+              error.value = JSON.parse(event.data).message;
+            }
+          } catch {
+            console.warn('Skipping malformed SSE event:', event);
           }
         }
       }
-    } catch (err: any) {
-      error.value = err.message || 'Connection failed';
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : 'Connection failed';
     } finally {
       isStreaming.value = false;
     }

@@ -1,4 +1,4 @@
-import { GenerateRequest, AgentMessage, BandMetadata } from './types';
+import { GenerateRequest, AgentMessage, BandMetadata, AgentId } from './types';
 import { callAgent } from './agents';
 import {
   getCliveSystemPrompt,
@@ -6,7 +6,6 @@ import {
   getMargauxSystemPrompt,
   getExMemberSystemPrompt,
   getAgentDisplayName,
-  AgentId,
 } from './prompts';
 
 function extractBandMetadata(cliveResponse: string, inputName: string): BandMetadata {

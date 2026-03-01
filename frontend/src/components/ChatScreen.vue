@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
-import type { AgentMessage, BandMetadata } from '../types'
-import { AGENT_COLORS, type AgentId } from '../types'
+import type { AgentMessage, BandMetadata, AgentId } from '../types'
+import { AGENT_CONFIG } from '../config/agents'
 import ChatBubble from './ChatBubble.vue'
 import ChatSidebar from './ChatSidebar.vue'
 import TypingIndicator from './TypingIndicator.vue'
@@ -29,7 +29,8 @@ watch(
 )
 
 const agentIds: AgentId[] = ['clive', 'frontperson', 'journalist', 'ex_member']
-const typingColor = AGENT_COLORS[agentIds[Math.floor(Math.random() * agentIds.length)]!]
+const randomAgent = agentIds[Math.floor(Math.random() * agentIds.length)] ?? 'clive'
+const typingColor = AGENT_CONFIG[randomAgent].color
 </script>
 
 <template>

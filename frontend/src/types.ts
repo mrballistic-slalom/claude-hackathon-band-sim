@@ -52,10 +52,3 @@ export interface EscalateRequest {
   band_metadata: BandMetadata;
 }
 
-/** Agent color mapping for UI -- maps each agent to a hex color string. */
-export const AGENT_COLORS: Record<AgentId, string> = {
-  clive: '#4682b4',
-  frontperson: '#8b5cf6',
-  journalist: '#f59e0b',
-  ex_member: '#ef4444',
-};

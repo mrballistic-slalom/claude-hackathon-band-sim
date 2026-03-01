@@ -84,6 +84,7 @@ onUnmounted(() => {
           label="Name"
           placeholder="Your nemesis, your boss, your ex..."
           variant="outlined"
+          :maxlength="100"
           class="mb-2"
         />
 
@@ -94,6 +95,7 @@ onUnmounted(() => {
               label="Trait 1"
               placeholder="loud"
               variant="outlined"
+            :maxlength="50"
             />
           </v-col>
           <v-col cols="4">
@@ -102,6 +104,7 @@ onUnmounted(() => {
               label="Trait 2"
               placeholder="always late"
               variant="outlined"
+            :maxlength="50"
             />
           </v-col>
           <v-col cols="4">
@@ -110,6 +113,7 @@ onUnmounted(() => {
               label="Trait 3"
               placeholder="replies-all"
               variant="outlined"
+            :maxlength="50"
             />
           </v-col>
         </v-row>

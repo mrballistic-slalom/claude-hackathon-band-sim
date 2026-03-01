@@ -1,8 +1,4 @@
-// System Prompts Module — Task 2
-// All 4 agent system prompt templates + drama level modifiers
-
-/** Unique identifier for each agent in the band simulation. */
-export type AgentId = 'clive' | 'frontperson' | 'journalist' | 'ex_member';
+import { AgentId } from './types';
 
 /** Mapping from agent ID to their default display name. */
 export const AGENT_DISPLAY_NAMES: Record<AgentId, string> = {
