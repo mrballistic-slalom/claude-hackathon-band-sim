@@ -7,7 +7,6 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
-import * as agentcore from '@aws-cdk/aws-bedrock-agentcore-alpha';
 import { Construct } from 'constructs';
 
 export class BandSimStack extends cdk.Stack {
@@ -15,31 +14,13 @@ export class BandSimStack extends cdk.Stack {
     super(scope, id, props);
 
     // ---------------------------------------------------------------
-    // 1. AgentCore Runtime — deploy the Python agent from ../agent/
+    // 1. Bedrock model ARNs (scoped to specific model)
     // ---------------------------------------------------------------
-    const agentRuntime = new agentcore.Runtime(this, 'BandAgent', {
-      runtimeName: 'band_sim_agent',
-      agentRuntimeArtifact: agentcore.AgentRuntimeArtifact.fromCodeAsset({
-        path: path.join(__dirname, '../../agent'),
-        runtime: agentcore.AgentCoreRuntime.PYTHON_3_12,
-        entrypoint: ['main.py'],
-      }),
-      networkConfiguration: agentcore.RuntimeNetworkConfiguration.usingPublicNetwork(),
-      environmentVariables: {
-        MODEL_ID: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
-      },
-    });
-
-    // Grant Bedrock model invocation to the agent runtime's role (scoped to specific model)
     // Cross-region inference profiles (us.*) can route to any US region, so use * for region
     const bedrockResources = [
       'arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet*',
       `arn:aws:bedrock:*:${cdk.Stack.of(this).account}:inference-profile/us.anthropic.claude-sonnet*`,
     ];
-    agentRuntime.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
-      resources: bedrockResources,
-    }));
 
     // ---------------------------------------------------------------
     // 2. Lambda Function — NodejsFunction for auto-bundling
@@ -52,7 +33,6 @@ export class BandSimStack extends cdk.Stack {
       memorySize: 256,
       reservedConcurrentExecutions: 10,
       environment: {
-        AGENT_RUNTIME_ARN: agentRuntime.agentRuntimeArn,
         AWS_REGION_NAME: cdk.Stack.of(this).region,
         MODEL_ID: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
       },
@@ -73,11 +53,8 @@ export class BandSimStack extends cdk.Stack {
     });
 
     // ---------------------------------------------------------------
-    // 4. Grant AgentCore invocation to Lambda
+    // 4. Grant Bedrock access to Lambda (scoped to specific model)
     // ---------------------------------------------------------------
-    agentRuntime.grantInvokeRuntime(orchestrator);
-
-    // Also grant direct Bedrock access as fallback (scoped to specific model)
     orchestrator.addToRolePolicy(new iam.PolicyStatement({
       actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
       resources: bedrockResources,

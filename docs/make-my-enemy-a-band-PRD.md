@@ -6,7 +6,7 @@ A web app that turns any person into an absurdly over-serious indie band — the
 
 **Tone:** Deadpan serious. Comically overproduced. Slightly unhinged.
 
-**Tech Stack:** Vite + Vue 3 (Composition API) + Vuetify 3 + TypeScript frontend, AWS Lambda + CloudFront + Bedrock (Claude) backend, AgentCore for multi-agent orchestration.
+**Tech Stack:** Vite + Vue 3 (Composition API) + Vuetify 3 + TypeScript frontend, AWS Lambda + CloudFront + Bedrock (Claude) backend, direct Bedrock InvokeModel for multi-agent orchestration.
 
 ---
 
@@ -14,7 +14,7 @@ A web app that turns any person into an absurdly over-serious indie band — the
 
 ```
 User Input → CloudFront → Lambda (orchestrator)
-  → AgentCore: 4 agents (all Claude via Bedrock)
+  → Bedrock InvokeModel: 4 agents (all Claude)
   → Each agent reacts to input + other agents' messages
   → Responses stream back to frontend via SSE (Server-Sent Events)
   → Group chat UI renders messages as they arrive
@@ -25,7 +25,7 @@ User Input → CloudFront → Lambda (orchestrator)
 | Service | Purpose |
 |---------|---------|
 | **Amazon Bedrock** | Claude model inference for all 4 agents |
-| **AgentCore** | Multi-agent orchestration, agent definitions, routing |
+| **Bedrock InvokeModel** | Direct Claude model inference for all 4 agents |
 | **AWS Lambda** | Orchestration logic, API handler (Function URL with response streaming) |
 | **CloudFront** | CDN proxy for frontend assets and `/api/*` routes |
 | **S3** | Frontend asset hosting |
@@ -274,12 +274,12 @@ Each click of "Escalate Drama":
 
 ## Backend Spec
 
-### Lambda + AgentCore Orchestration
+### Lambda + Bedrock Orchestration
 
 **Initial Generation Flow:**
 1. Receive input (name, traits, petty_level)
 2. Construct agent-specific prompts by injecting input into system prompt templates
-3. Call agents sequentially via AgentCore:
+3. Call agents sequentially via Bedrock InvokeModel:
    - Clive first (establishes band name, genre, commercial pitch)
    - Frontperson second (reacts to Clive's pitch, adds pretentious counter-vision)
    - Margaux third (reviews both, gives initial score)
@@ -293,7 +293,7 @@ Each click of "Escalate Drama":
 3. For each selected agent:
    - Pick a random previous message from a DIFFERENT agent
    - Construct prompt: system prompt + full history + "React specifically to: [message]" + drama level modifier
-   - Call via AgentCore/Bedrock
+   - Call via Bedrock InvokeModel
 4. Stream each message to frontend as it completes
 
 ### Model Configuration
@@ -396,7 +396,7 @@ Pre-baked name: "Greg from Accounting" / traits: ["reply-all," "microwaves fish,
 Given 3-hour constraint, build in this order:
 
 ### Hour 1: Backend Core
-1. Set up AgentCore with 4 agent definitions
+1. Set up Bedrock InvokeModel with 4 agent definitions
 2. Wire Bedrock Claude as the model for all agents
 3. Implement Round 1 sequential flow (generate endpoint)
 4. Implement Escalation flow (escalate endpoint)

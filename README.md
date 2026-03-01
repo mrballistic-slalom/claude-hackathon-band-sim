@@ -57,7 +57,7 @@ By Drama Level 5, someone has announced a vinyl apology tour, NPR Tiny Desk has 
 
 **Backend:** A single AWS Lambda (Node.js 20) with a Function URL that streams responses as Server-Sent Events. Two endpoints: `/generate` for initial band creation, `/escalate` for making everything worse. No API Gateway needed — Lambda Function URLs handle streaming natively.
 
-**AI:** Four distinct system prompts running Claude Sonnet through Amazon Bedrock, orchestrated by AgentCore. Each agent has a unique personality, reaction style, and set of grievances. Temperature set to 0.9 because we want creative chaos, not corporate safety.
+**AI:** Four distinct system prompts running Claude Sonnet 4.5 through Amazon Bedrock. Each agent has a unique personality, reaction style, and set of grievances. Temperature set to 0.9 because we want creative chaos, not corporate safety.
 
 **Infra:** Single AWS CDK stack (TypeScript). S3 for the frontend, CloudFront for distribution, Lambda for compute. Deploys in one command. Destroys in one command. As all hackathon projects should.
 
@@ -85,8 +85,9 @@ Then hit Escalate three times and try not to read Margaux's review out loud.
 ## Getting Started
 
 ### Prerequisites
-- Node.js (18+)
+- Node.js (20+)
 - AWS CLI configured (with Bedrock + Lambda permissions)
+- Claude Sonnet 4.5 model access enabled in Amazon Bedrock console
 
 ### Setup
 
@@ -123,7 +124,7 @@ band-sim/
 ├── backend/     # Lambda handler (TypeScript)
 │   └── src/
 │       ├── handler.ts    # Route dispatcher + SSE
-│       ├── agents.ts     # AgentCore client, agent definitions
+│       ├── agents.ts     # Bedrock client, agent definitions
 │       ├── generate.ts   # Round 1 flow
 │       ├── escalate.ts   # Escalation logic
 │       └── prompts.ts    # System prompt templates

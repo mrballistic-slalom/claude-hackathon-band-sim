@@ -1,3 +1,0 @@
-strands-agents
-strands-agents-bedrock
-bedrock-agentcore

@@ -13,8 +13,9 @@ The PRD is in `docs/make-my-enemy-a-band-PRD.md` — it contains the full agent 
 - **Frontend:** Vite + Vue 3 (Composition API) + TypeScript + Vuetify 3
 - **Backend:** AWS Lambda (Function URL with response streaming, no API Gateway)
 - **Infra:** AWS CDK (TypeScript) in `infra/`
-- **AI:** Amazon Bedrock (Claude Sonnet) via AgentCore for multi-agent orchestration
-- **Model config:** Temperature 0.9, max 200 tokens per agent response, 10s timeout per agent
+- **AI:** Amazon Bedrock (Claude Sonnet 4.5) — direct `InvokeModel` via `@aws-sdk/client-bedrock-runtime`
+- **Model ID:** `us.anthropic.claude-sonnet-4-5-20250929-v1:0` (cross-region inference profile)
+- **Model config:** Temperature 0.9, max 400 tokens per agent response, 10s timeout per agent
 
 ## Commands
 
@@ -70,7 +71,7 @@ Vue composables: `useSSEStream` (fetch + ReadableStream SSE parsing), `useDrama`
 ### Backend
 Two endpoints, both return SSE streams:
 
-**POST /api/generate** — Initial band creation. Agents called sequentially via AgentCore: Clive (establishes band name/genre) -> Frontperson (reacts) -> Margaux (reviews + scores) -> Ex-Member (leaks). Each agent sees all prior messages.
+**POST /api/generate** — Initial band creation. Agents called sequentially via Bedrock InvokeModel: Clive (establishes band name/genre) -> Frontperson (reacts) -> Margaux (reviews + scores) -> Ex-Member (leaks). Each agent sees all prior messages.
 
 **POST /api/escalate** — Picks 2-3 random agents, each reacts to a random message from a *different* agent. Full chat history + escalation flavor text passed as context. Drama levels 1-6+ modify agent intensity.
 
@@ -89,3 +90,29 @@ Both endpoints stream responses as SSE via Lambda Function URL (response streami
 - Tone is deadpan serious, comically overproduced, slightly unhinged
 - Agent responses must be 2-4 sentences, specific (never generic), and reference actual conversation details
 - The Frontperson's name, traits, and petty level come from user input and get injected into the system prompt template
+
+## Security
+
+### Request Validation
+- **Body size limit:** 64KB max (`handler.ts`)
+- **Generate input:** name (string, max 100), traits (string or 3-string array, max 50 each), petty_level (1-10), optional pronouns
+- **Escalate input:** history (array, max 200 items, each with valid agent ID + content max 2000), drama_level (1-100), session_id (alphanumeric/hyphens, max 100), optional band_metadata
+- **Input sanitization:** Name and traits are stripped of angle brackets before injection into prompts (`generate.ts`). History content is truncated to 200 chars in escalation instruction templates to prevent prompt stuffing.
+
+### Infrastructure
+- **Origin verification:** CloudFront sends a secret `X-Origin-Verify` header; Lambda rejects requests without it (403). This prevents direct Function URL access bypassing CloudFront.
+- **CORS:** Lambda derives allowed origin from request `Origin` header, matching `*.cloudfront.net` only. Falls back to `https://localhost` for local dev.
+- **Security headers:** All responses include `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`. CloudFront adds HSTS, CSP, and `Permissions-Policy`.
+- **Lambda concurrency:** Capped at 10 (`reservedConcurrentExecutions`) to prevent runaway costs.
+- **IAM:** Bedrock permissions scoped to `anthropic.claude-sonnet*` models only. Cross-region inference profiles require `*` for region in ARN.
+- **S3:** Access logging enabled to a separate bucket with 90-day lifecycle. Block all public access + S3-managed encryption.
+- **Frontend:** DOMPurify with `ALLOWED_URI_REGEXP` restricting to `https://` URIs only.
+- **CI:** GitHub Actions pinned to commit SHAs. `npm audit --audit-level=high` on all packages.
+
+### Upgrading the Model
+The model ID is set in `infra/lib/infra-stack.ts` (Lambda `MODEL_ID` env var).
+
+Before upgrading, verify the new model has `agreementAvailability: AVAILABLE`:
+```bash
+aws bedrock get-foundation-model-availability --model-id <model-id> --region us-east-2
+```
