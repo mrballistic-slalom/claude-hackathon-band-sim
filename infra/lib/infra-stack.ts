@@ -63,8 +63,8 @@ export class BandSimStack extends cdk.Stack {
       authType: lambda.FunctionUrlAuthType.NONE,
       invokeMode: lambda.InvokeMode.RESPONSE_STREAM,
       cors: {
-        // Restrict to CloudFront origins only (can't reference distribution domain due to circular dep)
-        allowedOrigins: ['https://*.cloudfront.net'],
+        // ORIGIN_VERIFY_SECRET blocks direct access; broad CORS is safe here
+        allowedOrigins: ['https://*'],
         allowedMethods: [lambda.HttpMethod.POST],
         allowedHeaders: ['Content-Type'],
       },
@@ -104,7 +104,6 @@ export class BandSimStack extends cdk.Stack {
     // ---------------------------------------------------------------
     // 6. CloudFront Distribution with two origins + security headers
     // ---------------------------------------------------------------
-    // Secret header for CloudFront-only Lambda access (Task 8)
     const originVerifySecret = crypto.randomBytes(32).toString('hex');
 
     const responseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, 'SecurityHeadersPolicy', {
@@ -160,8 +159,7 @@ export class BandSimStack extends cdk.Stack {
       ],
     });
 
-    // Pass CloudFront URL and origin verify secret to Lambda
-    orchestrator.addEnvironment('ALLOWED_ORIGIN', `https://${distribution.distributionDomainName}`);
+    // Pass origin verify secret to Lambda (ALLOWED_ORIGIN is derived at runtime to avoid circular dep)
     orchestrator.addEnvironment('ORIGIN_VERIFY_SECRET', originVerifySecret);
 
     // ---------------------------------------------------------------

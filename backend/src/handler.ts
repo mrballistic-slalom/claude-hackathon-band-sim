@@ -12,8 +12,15 @@ import { GenerateRequest, EscalateRequest } from './types';
 import { validateGenerateRequest, validateEscalateRequest } from './validation';
 
 const MAX_BODY_SIZE = 65536; // 64KB
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://localhost';
 const ORIGIN_VERIFY_SECRET = process.env.ORIGIN_VERIFY_SECRET || '';
+
+/** Derive allowed origin from request. Accepts *.cloudfront.net origins; falls back to localhost. */
+function getAllowedOrigin(requestOrigin: string | undefined): string {
+  if (requestOrigin && /^https:\/\/[a-z0-9]+\.cloudfront\.net$/.test(requestOrigin)) {
+    return requestOrigin;
+  }
+  return 'https://localhost';
+}
 
 const SECURITY_HEADERS: Record<string, string> = {
   'X-Content-Type-Options': 'nosniff',
@@ -40,6 +47,7 @@ export const handler = awslambda.streamifyResponse(
   async (event: any, responseStream: any, _context: any) => {
     const method = event.requestContext?.http?.method || '';
     const path = event.rawPath || event.requestContext?.http?.path || '';
+    const allowedOrigin = getAllowedOrigin(event.headers?.origin);
 
     // Handle CORS preflight
     if (method === 'OPTIONS') {
@@ -47,7 +55,7 @@ export const handler = awslambda.streamifyResponse(
         statusCode: 204,
         headers: {
           ...SECURITY_HEADERS,
-          'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+          'Access-Control-Allow-Origin': allowedOrigin,
           'Access-Control-Allow-Methods': 'POST, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type',
         },
@@ -75,7 +83,7 @@ export const handler = awslambda.streamifyResponse(
           ...SECURITY_HEADERS,
           'Content-Type': 'application/json',
           'Allow': 'POST, OPTIONS',
-          'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+          'Access-Control-Allow-Origin': allowedOrigin,
         },
       });
       responseStream.write(JSON.stringify({ message: 'Method not allowed' }));
@@ -90,7 +98,7 @@ export const handler = awslambda.streamifyResponse(
         headers: {
           ...SECURITY_HEADERS,
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+          'Access-Control-Allow-Origin': allowedOrigin,
         },
       });
       responseStream.write(JSON.stringify({ message: 'Request body too large' }));
@@ -105,7 +113,7 @@ export const handler = awslambda.streamifyResponse(
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
-        'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+        'Access-Control-Allow-Origin': allowedOrigin,
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
       },
