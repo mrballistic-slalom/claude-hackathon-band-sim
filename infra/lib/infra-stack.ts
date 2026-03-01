@@ -31,9 +31,10 @@ export class BandSimStack extends cdk.Stack {
     });
 
     // Grant Bedrock model invocation to the agent runtime's role (scoped to specific model)
+    // Cross-region inference profiles (us.*) can route to any US region, so use * for region
     const bedrockResources = [
-      `arn:aws:bedrock:${cdk.Stack.of(this).region}::foundation-model/anthropic.claude-sonnet*`,
-      `arn:aws:bedrock:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:inference-profile/us.anthropic.claude-sonnet*`,
+      'arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet*',
+      `arn:aws:bedrock:*:${cdk.Stack.of(this).account}:inference-profile/us.anthropic.claude-sonnet*`,
     ];
     agentRuntime.addToRolePolicy(new iam.PolicyStatement({
       actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
@@ -53,6 +54,7 @@ export class BandSimStack extends cdk.Stack {
       environment: {
         AGENT_RUNTIME_ARN: agentRuntime.agentRuntimeArn,
         AWS_REGION_NAME: cdk.Stack.of(this).region,
+        MODEL_ID: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
       },
     });
 
