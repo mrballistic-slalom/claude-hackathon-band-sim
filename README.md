@@ -2,8 +2,8 @@
 # Make My Enemy a Band
 
 <p align="center">
-    <img src="docs/screen1.png" alt="Screenshot 1" width="250" />
-    <img src="docs/screen2.png" alt="Screenshot 2" width="250" />
+    <img src="docs/screen1.png" alt="Screenshot 1" width="320" />
+    <img src="docs/screen2.png" alt="Screenshot 2" width="320" />
 </p>
 
 Turn unresolved personal tension into indie rock.
