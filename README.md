@@ -3,7 +3,6 @@
 
 <p align="center">
     <img src="docs/screen1.png" alt="Screenshot 1" width="250" />
-    <br/>
     <img src="docs/screen2.png" alt="Screenshot 2" width="250" />
 </p>
 
