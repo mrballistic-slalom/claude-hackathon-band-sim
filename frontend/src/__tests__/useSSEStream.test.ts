@@ -207,8 +207,8 @@ describe('useSSEStream', () => {
     await stream.connect('/api/test', {});
 
     expect(stream.messages.value).toHaveLength(1);
-    expect(stream.messages.value[0].agent).toBe('clive');
-    expect(stream.messages.value[0].content).toBe('hello');
+    expect(stream.messages.value[0]!.agent).toBe('clive');
+    expect(stream.messages.value[0]!.content).toBe('hello');
     expect(stream.isDone.value).toBe(true);
     expect(stream.isStreaming.value).toBe(false);
   });
@@ -302,7 +302,7 @@ describe('useSSEStream', () => {
     await stream.connect('/api/test', {});
 
     expect(stream.messages.value).toHaveLength(1);
-    expect(stream.messages.value[0].content).toBe('split');
+    expect(stream.messages.value[0]!.content).toBe('split');
   });
 
   it('connect() skips malformed JSON events without crashing', async () => {
@@ -333,7 +333,7 @@ describe('useSSEStream', () => {
 
     // The malformed event should be skipped, the valid one processed
     expect(stream.messages.value).toHaveLength(1);
-    expect(stream.messages.value[0].content).toBe('ok');
+    expect(stream.messages.value[0]!.content).toBe('ok');
   });
 
   it('connect() sets generic error for non-Error thrown objects', async () => {
