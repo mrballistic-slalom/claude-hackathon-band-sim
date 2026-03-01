@@ -88,8 +88,8 @@ export function validateEscalateRequest(body: any): string | null {
     return 'Invalid "session_id": must contain only alphanumeric characters, hyphens, and underscores';
   }
 
-  // band_metadata: optional, but if present validate structure
-  if (body.band_metadata !== undefined) {
+  // band_metadata: optional, but if present and non-null validate structure
+  if (body.band_metadata !== undefined && body.band_metadata !== null) {
     if (!body.band_metadata || typeof body.band_metadata !== 'object') {
       return 'Invalid "band_metadata": must be an object';
     }

@@ -6,7 +6,7 @@ from strands.models.bedrock import BedrockModel
 
 app = BedrockAgentCoreApp()
 
-MODEL_ID = os.environ.get("MODEL_ID", "us.anthropic.claude-sonnet-4-6")
+MODEL_ID = os.environ.get("MODEL_ID", "us.anthropic.claude-sonnet-4-5-20250929-v1:0")
 REGION = os.environ.get("AWS_REGION", "us-east-1")
 
 MAX_SYSTEM_PROMPT_LEN = 10000

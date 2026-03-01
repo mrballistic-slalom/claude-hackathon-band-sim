@@ -26,7 +26,7 @@ export class BandSimStack extends cdk.Stack {
       }),
       networkConfiguration: agentcore.RuntimeNetworkConfiguration.usingPublicNetwork(),
       environmentVariables: {
-        MODEL_ID: 'us.anthropic.claude-sonnet-4-6',
+        MODEL_ID: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
       },
     });
 
