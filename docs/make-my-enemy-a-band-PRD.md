@@ -6,17 +6,17 @@ A web app that turns any person into an absurdly over-serious indie band — the
 
 **Tone:** Deadpan serious. Comically overproduced. Slightly unhinged.
 
-**Tech Stack:** Vite + React + Tailwind frontend, AWS Lambda + API Gateway + Bedrock (Claude) backend, AgentCore for multi-agent orchestration.
+**Tech Stack:** Vite + Vue 3 (Composition API) + Vuetify 3 + TypeScript frontend, AWS Lambda + CloudFront + Bedrock (Claude) backend, AgentCore for multi-agent orchestration.
 
 ---
 
 ## Architecture Overview
 
 ```
-User Input → API Gateway → Lambda (orchestrator)
+User Input → CloudFront → Lambda (orchestrator)
   → AgentCore: 4 agents (all Claude via Bedrock)
   → Each agent reacts to input + other agents' messages
-  → Responses stream back to frontend via polling/SSE
+  → Responses stream back to frontend via SSE (Server-Sent Events)
   → Group chat UI renders messages as they arrive
 ```
 
@@ -26,8 +26,9 @@ User Input → API Gateway → Lambda (orchestrator)
 |---------|---------|
 | **Amazon Bedrock** | Claude model inference for all 4 agents |
 | **AgentCore** | Multi-agent orchestration, agent definitions, routing |
-| **AWS Lambda** | Orchestration logic, API handler |
-| **API Gateway** | REST/WebSocket endpoint for frontend |
+| **AWS Lambda** | Orchestration logic, API handler (Function URL with response streaming) |
+| **CloudFront** | CDN proxy for frontend assets and `/api/*` routes |
+| **S3** | Frontend asset hosting |
 
 ---
 
@@ -239,9 +240,9 @@ Each click of "Escalate Drama":
 ## Frontend Spec
 
 ### Tech
-- **Vite + React + TypeScript**
-- **Tailwind CSS** for styling
-- No component library — raw Tailwind for speed
+- **Vite + Vue 3 (Composition API) + TypeScript**
+- **Vuetify 3** component library with dark theme customization
+- CSS with Vuetify theming for design consistency
 
 ### Visual Direction
 - **Dark mode** — near-black background (#0a0a0a)
@@ -252,10 +253,10 @@ Each click of "Escalate Drama":
   - Margaux: Amber/gold (#f59e0b)
   - Ex-Member: Red (#ef4444)
 - **Typography:**
-  - Headlines: Serif font (use Google Fonts — "Playfair Display" or similar)
-  - Body/chat: System sans-serif
+  - Headlines: Playfair Display (Google Fonts, serif)
+  - Body/chat: Roboto (Vuetify default, sans-serif)
   - Agent names: Monospace
-- **Chat bubbles:** Rounded, left-aligned, with agent color as left border accent
+- **Chat bubbles:** Vuetify `v-card` components, rounded, with agent color as left border accent
 - **Typing indicator:** Three animated dots in agent's color
 
 ### Animations

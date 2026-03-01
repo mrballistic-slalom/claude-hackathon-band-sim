@@ -26,7 +26,7 @@ describe('getCliveSystemPrompt', () => {
 describe('getFrontpersonSystemPrompt', () => {
   it('substitutes name, traits, and pettyLevel into the prompt', () => {
     const prompt = getFrontpersonSystemPrompt('Greg', ['loud', 'late', 'rude'], 7);
-    expect(prompt).toContain('You are Greg');
+    expect(prompt).toContain('"""Greg"""');
     expect(prompt).toContain('loud');
     expect(prompt).toContain('late');
     expect(prompt).toContain('rude');
@@ -35,7 +35,7 @@ describe('getFrontpersonSystemPrompt', () => {
 
   it('works with different names and levels', () => {
     const prompt = getFrontpersonSystemPrompt('Zara', ['shy', 'anxious', 'dramatic'], 3);
-    expect(prompt).toContain('You are Zara');
+    expect(prompt).toContain('"""Zara"""');
     expect(prompt).toContain('shy');
     expect(prompt).toContain('3/10');
   });
@@ -56,10 +56,10 @@ describe('getMargauxSystemPrompt', () => {
 });
 
 describe('getExMemberSystemPrompt', () => {
-  it('replaces the frontperson name in leaked quote format', () => {
+  it('replaces the frontperson name in triple-quote delimiters', () => {
     const prompt = getExMemberSystemPrompt('Greg');
-    expect(prompt).toContain('Greg');
-    expect(prompt).toContain("Direct quote from Greg");
+    expect(prompt).toContain('"""Greg"""');
+    expect(prompt).toContain('Direct quote from [their name]');
   });
 
   it('works with a different name', () => {
