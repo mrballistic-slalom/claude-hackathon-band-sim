@@ -12,7 +12,8 @@ import { GenerateRequest, EscalateRequest } from './types';
 import { validateGenerateRequest, validateEscalateRequest } from './validation';
 
 const MAX_BODY_SIZE = 65536; // 64KB
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://localhost';
+const ORIGIN_VERIFY_SECRET = process.env.ORIGIN_VERIFY_SECRET || '';
 
 const SECURITY_HEADERS: Record<string, string> = {
   'X-Content-Type-Options': 'nosniff',
@@ -51,6 +52,17 @@ export const handler = awslambda.streamifyResponse(
           'Access-Control-Allow-Headers': 'Content-Type',
         },
       });
+      responseStream.end();
+      return;
+    }
+
+    // Verify request comes from CloudFront via secret header
+    if (ORIGIN_VERIFY_SECRET && event.headers?.['x-origin-verify'] !== ORIGIN_VERIFY_SECRET) {
+      responseStream = awslambda.HttpResponseStream.from(responseStream, {
+        statusCode: 403,
+        headers: { ...SECURITY_HEADERS, 'Content-Type': 'application/json' },
+      });
+      responseStream.write(JSON.stringify({ message: 'Forbidden' }));
       responseStream.end();
       return;
     }

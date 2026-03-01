@@ -26,5 +26,6 @@ export function renderMarkdown(text: string): string {
   return DOMPurify.sanitize(raw, {
     ALLOWED_TAGS,
     ALLOWED_ATTR,
+    ALLOWED_URI_REGEXP: /^https?:\/\//i,
   })
 }

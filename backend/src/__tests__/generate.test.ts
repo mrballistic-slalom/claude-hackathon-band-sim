@@ -294,12 +294,11 @@ describe('handleGenerate', () => {
   // issue — the validation layer should reject non-array traits before
   // reaching handleGenerate.
   // ---------------------------------------------------------------------------
-  it('sanitizes string traits for Clive instruction', async () => {
+  it('handles string traits by sanitizing to an array', async () => {
     const cliveResponse =
       'BAND NAME: X\nGENRE: X\nPITCH: X\nINFLUENCES: X\nString trait.';
 
-    // Only Clive will succeed before the crash
-    mockedCallAgent.mockResolvedValueOnce(cliveResponse);
+    mockedCallAgent.mockResolvedValue(cliveResponse);
 
     const inputWithStringTraits = {
       name: 'Greg',
@@ -307,15 +306,10 @@ describe('handleGenerate', () => {
       petty_level: 5,
     };
 
-    // handleGenerate will throw when calling getFrontpersonSystemPrompt
-    // because it passes the raw string traits (not sanitized array) to
-    // a function that expects an array.
-    await expect(handleGenerate(inputWithStringTraits, writeSSE)).rejects.toThrow(
-      'traits.map is not a function'
-    );
+    // Should handle string traits without crashing (sanitized to array)
+    await handleGenerate(inputWithStringTraits, writeSSE);
 
-    // But Clive's call should have been made with sanitized traits
-    expect(mockedCallAgent).toHaveBeenCalledTimes(1);
+    // Clive's call should have been made with sanitized traits
     const cliveInstruction = mockedCallAgent.mock.calls[0][2];
     expect(cliveInstruction).toContain('stubborn');
   });

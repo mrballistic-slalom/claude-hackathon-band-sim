@@ -59,8 +59,19 @@ export function validateEscalateRequest(body: any): string | null {
     if (typeof item.content !== 'string' || item.content.length === 0 || item.content.length > 2000) {
       return `Invalid "history[${i}].content": must be a non-empty string with max length 2000`;
     }
-    if (typeof item.agent_display_name !== 'string' || item.agent_display_name.length === 0) {
-      return `Invalid "history[${i}].agent_display_name": must be a non-empty string`;
+    if (typeof item.agent_display_name !== 'string' || item.agent_display_name.length === 0 || item.agent_display_name.length > 100) {
+      return `Invalid "history[${i}].agent_display_name": must be a non-empty string with max length 100`;
+    }
+    if (item.reacting_to !== undefined && item.reacting_to !== null) {
+      if (typeof item.reacting_to !== 'object') {
+        return `Invalid "history[${i}].reacting_to": must be an object or null`;
+      }
+      if (typeof item.reacting_to.agent !== 'string' || typeof item.reacting_to.excerpt !== 'string') {
+        return `Invalid "history[${i}].reacting_to": must have agent and excerpt strings`;
+      }
+      if (item.reacting_to.excerpt.length > 200) {
+        return `Invalid "history[${i}].reacting_to.excerpt": max length 200`;
+      }
     }
   }
 
@@ -69,9 +80,12 @@ export function validateEscalateRequest(body: any): string | null {
     return 'Invalid or missing "drama_level": must be a number between 1 and 100';
   }
 
-  // session_id: required string, max 100 chars
+  // session_id: required string, max 100 chars, alphanumeric/hyphens only
   if (typeof body.session_id !== 'string' || body.session_id.length === 0 || body.session_id.length > 100) {
     return 'Invalid or missing "session_id": must be a non-empty string with max length 100';
+  }
+  if (!/^[a-zA-Z0-9_-]+$/.test(body.session_id)) {
+    return 'Invalid "session_id": must contain only alphanumeric characters, hyphens, and underscores';
   }
 
   // band_metadata: optional, but if present validate structure
@@ -79,14 +93,22 @@ export function validateEscalateRequest(body: any): string | null {
     if (!body.band_metadata || typeof body.band_metadata !== 'object') {
       return 'Invalid "band_metadata": must be an object';
     }
-    if (typeof body.band_metadata.band_name !== 'string') {
-      return 'Invalid "band_metadata.band_name": must be a string';
+    if (typeof body.band_metadata.band_name !== 'string' || body.band_metadata.band_name.length > 200) {
+      return 'Invalid "band_metadata.band_name": must be a string with max length 200';
     }
-    if (typeof body.band_metadata.genre !== 'string') {
-      return 'Invalid "band_metadata.genre": must be a string';
+    if (typeof body.band_metadata.genre !== 'string' || body.band_metadata.genre.length > 200) {
+      return 'Invalid "band_metadata.genre": must be a string with max length 200';
     }
-    if (typeof body.band_metadata.pitch !== 'string') {
-      return 'Invalid "band_metadata.pitch": must be a string';
+    if (typeof body.band_metadata.pitch !== 'string' || body.band_metadata.pitch.length > 500) {
+      return 'Invalid "band_metadata.pitch": must be a string with max length 500';
+    }
+    if (body.band_metadata.influences !== undefined) {
+      if (!Array.isArray(body.band_metadata.influences) || body.band_metadata.influences.length > 20) {
+        return 'Invalid "band_metadata.influences": must be an array with max 20 items';
+      }
+      if (!body.band_metadata.influences.every((i: unknown) => typeof i === 'string' && i.length <= 100)) {
+        return 'Invalid "band_metadata.influences": each item must be a string with max length 100';
+      }
     }
   }
 

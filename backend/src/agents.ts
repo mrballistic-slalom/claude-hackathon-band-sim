@@ -70,7 +70,7 @@ export async function callAgent(
 
     const result = JSON.parse(new TextDecoder().decode(response.body));
     if (result.stop_reason && result.stop_reason !== 'end_turn') {
-      console.warn(`Agent stop_reason: ${result.stop_reason} (model: ${MODEL_ID})`);
+      console.warn(`Agent stop_reason: ${result.stop_reason}`);
     }
     return result.content[0]?.text || null;
   } catch (err: any) {

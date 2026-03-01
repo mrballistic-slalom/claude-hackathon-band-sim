@@ -46,7 +46,7 @@ export async function handleGenerate(
     anySuccess = true;
 
     // 3. Parse band_metadata from Clive's response
-    const metadata = extractBandMetadata(cliveResponse, input.name);
+    const metadata = extractBandMetadata(cliveResponse, sanitizedName);
 
     // 4. Write metadata SSE event
     writeSSE('metadata', metadata);
@@ -63,7 +63,7 @@ export async function handleGenerate(
   }
 
   // 6. Call Frontperson with Clive's message as context
-  const frontpersonSystemPrompt = getFrontpersonSystemPrompt(input.name, input.traits, input.petty_level);
+  const frontpersonSystemPrompt = getFrontpersonSystemPrompt(sanitizedName, sanitizedTraits, input.petty_level);
   const frontpersonInstruction = "Your A&R executive Clive just pitched a vision for your band. React to his pitch.";
 
   const frontpersonResponse = await callAgent(frontpersonSystemPrompt, messages, frontpersonInstruction);
@@ -75,7 +75,7 @@ export async function handleGenerate(
     const cliveMsg = messages.find((m) => m.agent === 'clive');
     const frontpersonMessage: AgentMessage = {
       agent: 'frontperson' as AgentId,
-      agent_display_name: getAgentDisplayName('frontperson', input.name),
+      agent_display_name: getAgentDisplayName('frontperson', sanitizedName),
       content: frontpersonResponse,
       reacting_to: cliveMsg
         ? { agent: cliveMsg.agent, excerpt: cliveMsg.content.substring(0, 100) }
@@ -109,7 +109,7 @@ export async function handleGenerate(
   }
 
   // 10. Call Ex-Member with all 3 prior messages
-  const exMemberSystemPrompt = getExMemberSystemPrompt(input.name);
+  const exMemberSystemPrompt = getExMemberSystemPrompt(sanitizedName);
   const exMemberInstruction = "The band is forming without you. You've been watching from the sidelines. Drop your first leak about what really happened.";
 
   const exMemberResponse = await callAgent(exMemberSystemPrompt, messages, exMemberInstruction);

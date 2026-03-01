@@ -260,4 +260,46 @@ describe('validateEscalateRequest', () => {
       band_metadata: { band_name: 123 },
     })).not.toBeNull();
   });
+
+  it('rejects agent_display_name exceeding 100 chars', () => {
+    expect(validateEscalateRequest({
+      ...validBody,
+      history: [{ agent: 'clive', agent_display_name: 'a'.repeat(101), content: 'hi' }],
+    })).not.toBeNull();
+  });
+
+  it('rejects session_id with special characters', () => {
+    expect(validateEscalateRequest({ ...validBody, session_id: 'test<script>' })).not.toBeNull();
+  });
+
+  it('accepts session_id with hyphens and underscores', () => {
+    expect(validateEscalateRequest({ ...validBody, session_id: 'test-session_123' })).toBeNull();
+  });
+
+  it('rejects reacting_to with oversized excerpt', () => {
+    expect(validateEscalateRequest({
+      ...validBody,
+      history: [{
+        agent: 'clive', agent_display_name: 'Clive', content: 'hi',
+        reacting_to: { agent: 'frontperson', excerpt: 'a'.repeat(201) },
+      }],
+    })).not.toBeNull();
+  });
+
+  it('accepts valid reacting_to in history', () => {
+    expect(validateEscalateRequest({
+      ...validBody,
+      history: [{
+        agent: 'clive', agent_display_name: 'Clive', content: 'hi',
+        reacting_to: { agent: 'frontperson', excerpt: 'some quote' },
+      }],
+    })).toBeNull();
+  });
+
+  it('rejects band_metadata.band_name exceeding 200 chars', () => {
+    expect(validateEscalateRequest({
+      ...validBody,
+      band_metadata: { band_name: 'a'.repeat(201), genre: 'Rock', pitch: 'A band' },
+    })).not.toBeNull();
+  });
 });

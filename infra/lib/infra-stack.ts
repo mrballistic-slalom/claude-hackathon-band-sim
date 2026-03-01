@@ -1,10 +1,10 @@
 import * as path from 'path';
+import * as crypto from 'crypto';
 import * as cdk from 'aws-cdk-lib';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-// Using pre-built backend bundle instead of NodejsFunction to avoid Docker bundling issues
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as agentcore from '@aws-cdk/aws-bedrock-agentcore-alpha';
@@ -30,13 +30,14 @@ export class BandSimStack extends cdk.Stack {
       },
     });
 
-    // Grant Bedrock model invocation to the agent runtime's role
+    // Grant Bedrock model invocation to the agent runtime's role (scoped to specific model)
+    const bedrockResources = [
+      `arn:aws:bedrock:${cdk.Stack.of(this).region}::foundation-model/anthropic.claude-sonnet*`,
+      `arn:aws:bedrock:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:inference-profile/us.anthropic.claude-sonnet*`,
+    ];
     agentRuntime.addToRolePolicy(new iam.PolicyStatement({
       actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
-      resources: [
-        'arn:aws:bedrock:*::foundation-model/anthropic.*',
-        'arn:aws:bedrock:*:*:inference-profile/us.anthropic.*',
-      ],
+      resources: bedrockResources,
     }));
 
     // ---------------------------------------------------------------
@@ -74,27 +75,38 @@ export class BandSimStack extends cdk.Stack {
     // ---------------------------------------------------------------
     agentRuntime.grantInvokeRuntime(orchestrator);
 
-    // Also grant direct Bedrock access as fallback
+    // Also grant direct Bedrock access as fallback (scoped to specific model)
     orchestrator.addToRolePolicy(new iam.PolicyStatement({
       actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
-      resources: [
-        'arn:aws:bedrock:*::foundation-model/anthropic.*',
-        'arn:aws:bedrock:*:*:inference-profile/us.anthropic.*',
-      ],
+      resources: bedrockResources,
     }));
 
     // ---------------------------------------------------------------
-    // 5. S3 Bucket for frontend
+    // 5. S3 Buckets for frontend + access logging
     // ---------------------------------------------------------------
+    const accessLogsBucket = new s3.Bucket(this, 'AccessLogsBucket', {
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      lifecycleRules: [{ expiration: cdk.Duration.days(90) }],
+    });
+
     const websiteBucket = new s3.Bucket(this, 'WebsiteBucket', {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      serverAccessLogsBucket: accessLogsBucket,
+      serverAccessLogsPrefix: 'website-access-logs/',
     });
 
     // ---------------------------------------------------------------
     // 6. CloudFront Distribution with two origins + security headers
     // ---------------------------------------------------------------
+    // Secret header for CloudFront-only Lambda access (Task 8)
+    const originVerifySecret = crypto.randomBytes(32).toString('hex');
+
     const responseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, 'SecurityHeadersPolicy', {
       responseHeadersPolicyName: 'BandSimSecurityHeaders',
       securityHeadersBehavior: {
@@ -115,6 +127,11 @@ export class BandSimStack extends cdk.Stack {
           override: true,
         },
       },
+      customHeadersBehavior: {
+        customHeaders: [
+          { header: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()', override: true },
+        ],
+      },
     });
 
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
@@ -127,6 +144,7 @@ export class BandSimStack extends cdk.Stack {
         '/api/*': {
           origin: new origins.HttpOrigin(
             cdk.Fn.select(2, cdk.Fn.split('/', functionUrl.url)),
+            { customHeaders: { 'X-Origin-Verify': originVerifySecret } },
           ),
           allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
           cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
@@ -142,8 +160,9 @@ export class BandSimStack extends cdk.Stack {
       ],
     });
 
-    // Pass CloudFront URL to Lambda so handler.ts can restrict CORS origin
+    // Pass CloudFront URL and origin verify secret to Lambda
     orchestrator.addEnvironment('ALLOWED_ORIGIN', `https://${distribution.distributionDomainName}`);
+    orchestrator.addEnvironment('ORIGIN_VERIFY_SECRET', originVerifySecret);
 
     // ---------------------------------------------------------------
     // 7. BucketDeployment to upload frontend
@@ -160,9 +179,6 @@ export class BandSimStack extends cdk.Stack {
     // ---------------------------------------------------------------
     new cdk.CfnOutput(this, 'CloudFrontUrl', {
       value: `https://${distribution.distributionDomainName}`,
-    });
-    new cdk.CfnOutput(this, 'FunctionUrl', {
-      value: functionUrl.url,
     });
   }
 }
