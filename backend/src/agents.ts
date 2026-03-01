@@ -22,12 +22,13 @@ export async function callAgent(
   instruction: string
 ): Promise<string | null> {
   try {
-    // Build conversation context
+    // Build conversation context (cap to last 20 messages to prevent oversized payloads)
     const conversationMessages: Array<{role: string; content: string}> = [];
+    const recentMessages = messages.slice(-20);
 
-    if (messages.length > 0) {
+    if (recentMessages.length > 0) {
       // Combine all prior messages into a single user context message
-      const contextText = messages
+      const contextText = recentMessages
         .map(m => `${m.agent_display_name}: ${m.content}`)
         .join('\n');
       conversationMessages.push({
@@ -48,7 +49,7 @@ export async function callAgent(
 
     const body = JSON.stringify({
       anthropic_version: 'bedrock-2023-05-31',
-      max_tokens: 200,
+      max_tokens: 400,
       temperature: 0.9,
       system: systemPrompt,
       messages: conversationMessages,
@@ -68,6 +69,9 @@ export async function callAgent(
     clearTimeout(timeout);
 
     const result = JSON.parse(new TextDecoder().decode(response.body));
+    if (result.stop_reason && result.stop_reason !== 'end_turn') {
+      console.warn(`Agent stop_reason: ${result.stop_reason} (model: ${MODEL_ID})`);
+    }
     return result.content[0]?.text || null;
   } catch (err: any) {
     console.error(`Agent call failed: ${err.message}`);

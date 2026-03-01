@@ -46,8 +46,9 @@ export class BandSimStack extends cdk.Stack {
       code: lambda.Code.fromAsset(path.join(__dirname, '../../backend/dist')),
       handler: 'handler.handler',
       runtime: lambda.Runtime.NODEJS_20_X,
-      timeout: cdk.Duration.seconds(30),
+      timeout: cdk.Duration.seconds(60),
       memorySize: 256,
+      reservedConcurrentExecutions: 10,
       environment: {
         AGENT_RUNTIME_ARN: agentRuntime.agentRuntimeArn,
         AWS_REGION_NAME: cdk.Stack.of(this).region,
@@ -61,8 +62,9 @@ export class BandSimStack extends cdk.Stack {
       authType: lambda.FunctionUrlAuthType.NONE,
       invokeMode: lambda.InvokeMode.RESPONSE_STREAM,
       cors: {
-        allowedOrigins: ['*'],
-        allowedMethods: [lambda.HttpMethod.ALL],
+        // Restrict to CloudFront origins only (can't reference distribution domain due to circular dep)
+        allowedOrigins: ['https://*.cloudfront.net'],
+        allowedMethods: [lambda.HttpMethod.POST],
         allowedHeaders: ['Content-Type'],
       },
     });
@@ -91,12 +93,35 @@ export class BandSimStack extends cdk.Stack {
     });
 
     // ---------------------------------------------------------------
-    // 6. CloudFront Distribution with two origins
+    // 6. CloudFront Distribution with two origins + security headers
     // ---------------------------------------------------------------
+    const responseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, 'SecurityHeadersPolicy', {
+      responseHeadersPolicyName: 'BandSimSecurityHeaders',
+      securityHeadersBehavior: {
+        contentTypeOptions: { override: true },
+        frameOptions: { frameOption: cloudfront.HeadersFrameOption.DENY, override: true },
+        strictTransportSecurity: {
+          accessControlMaxAge: cdk.Duration.seconds(63072000),
+          includeSubdomains: true,
+          preload: true,
+          override: true,
+        },
+        referrerPolicy: {
+          referrerPolicy: cloudfront.HeadersReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN,
+          override: true,
+        },
+        contentSecurityPolicy: {
+          contentSecurityPolicy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'",
+          override: true,
+        },
+      },
+    });
+
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
       defaultBehavior: {
         origin: origins.S3BucketOrigin.withOriginAccessControl(websiteBucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        responseHeadersPolicy,
       },
       additionalBehaviors: {
         '/api/*': {
@@ -107,6 +132,7 @@ export class BandSimStack extends cdk.Stack {
           cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
           originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
           viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          responseHeadersPolicy,
         },
       },
       defaultRootObject: 'index.html',
@@ -115,6 +141,9 @@ export class BandSimStack extends cdk.Stack {
         { httpStatus: 403, responsePagePath: '/index.html', responseHttpStatus: 200 },
       ],
     });
+
+    // Pass CloudFront URL to Lambda so handler.ts can restrict CORS origin
+    orchestrator.addEnvironment('ALLOWED_ORIGIN', `https://${distribution.distributionDomainName}`);
 
     // ---------------------------------------------------------------
     // 7. BucketDeployment to upload frontend

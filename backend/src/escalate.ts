@@ -114,11 +114,22 @@ export async function handleEscalate(
       continue;
     }
 
-    // b. Pick a random message from the filtered list
-    const targetMessage = otherMessages[Math.floor(Math.random() * otherMessages.length)];
+    // b. Pick a random message, preferring ones this agent hasn't reacted to yet
+    const previousReactions = allMessages
+      .filter((m) => m.agent === agentId && m.reacting_to)
+      .map((m) => m.reacting_to!);
+    const freshMessages = otherMessages.filter((candidate) => {
+      const candidateExcerpt = candidate.content.substring(0, 100);
+      return !previousReactions.some(
+        (r) => r.agent === candidate.agent && r.excerpt === candidateExcerpt
+      );
+    });
+    const pool = freshMessages.length > 0 ? freshMessages : otherMessages;
+    const targetMessage = pool[Math.floor(Math.random() * pool.length)];
 
-    // c. Build instruction
-    const instruction = `React specifically to ${targetMessage.agent_display_name}'s statement: '${targetMessage.content}'. ${dramaModifier}`;
+    // c. Build instruction (truncate content to prevent prompt stuffing)
+    const excerpt = targetMessage.content.substring(0, 200);
+    const instruction = `React specifically to ${targetMessage.agent_display_name}'s statement: '${excerpt}'. ${dramaModifier}`;
 
     // d. Get the system prompt for this agent
     const systemPrompt = getSystemPromptForAgent(

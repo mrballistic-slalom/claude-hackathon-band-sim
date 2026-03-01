@@ -11,6 +11,16 @@ import { handleEscalate } from './escalate';
 import { GenerateRequest, EscalateRequest } from './types';
 import { validateGenerateRequest, validateEscalateRequest } from './validation';
 
+const MAX_BODY_SIZE = 65536; // 64KB
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
+
+const SECURITY_HEADERS: Record<string, string> = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'X-XSS-Protection': '0',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+};
+
 /**
  * Writes a Server-Sent Event (SSE) to the response stream.
  * @param stream - The Lambda response stream to write to.
@@ -35,7 +45,8 @@ export const handler = awslambda.streamifyResponse(
       responseStream = awslambda.HttpResponseStream.from(responseStream, {
         statusCode: 204,
         headers: {
-          'Access-Control-Allow-Origin': '*',
+          ...SECURITY_HEADERS,
+          'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
           'Access-Control-Allow-Methods': 'POST, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type',
         },
@@ -49,9 +60,10 @@ export const handler = awslambda.streamifyResponse(
       responseStream = awslambda.HttpResponseStream.from(responseStream, {
         statusCode: 405,
         headers: {
+          ...SECURITY_HEADERS,
           'Content-Type': 'application/json',
           'Allow': 'POST, OPTIONS',
-          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
         },
       });
       responseStream.write(JSON.stringify({ message: 'Method not allowed' }));
@@ -59,13 +71,29 @@ export const handler = awslambda.streamifyResponse(
       return;
     }
 
+    // Body size guard
+    if (event.body && event.body.length > MAX_BODY_SIZE) {
+      responseStream = awslambda.HttpResponseStream.from(responseStream, {
+        statusCode: 413,
+        headers: {
+          ...SECURITY_HEADERS,
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+        },
+      });
+      responseStream.write(JSON.stringify({ message: 'Request body too large' }));
+      responseStream.end();
+      return;
+    }
+
     const metadata = {
       statusCode: 200,
       headers: {
+        ...SECURITY_HEADERS,
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
       },

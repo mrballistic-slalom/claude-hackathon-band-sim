@@ -171,12 +171,19 @@ describe('validateGenerateRequest', () => {
 
 describe('validateEscalateRequest', () => {
   const validBody = {
-    history: [],
+    history: [
+      { agent: 'clive', agent_display_name: 'Clive', content: 'Test message' },
+    ],
     drama_level: 3,
+    session_id: 'test-session-123',
   };
 
   it('returns null for a valid request', () => {
     expect(validateEscalateRequest(validBody)).toBeNull();
+  });
+
+  it('returns null for empty history array', () => {
+    expect(validateEscalateRequest({ ...validBody, history: [] })).toBeNull();
   });
 
   it('rejects null body', () => {
@@ -184,15 +191,36 @@ describe('validateEscalateRequest', () => {
   });
 
   it('rejects missing history', () => {
-    expect(validateEscalateRequest({ drama_level: 3 })).not.toBeNull();
+    expect(validateEscalateRequest({ drama_level: 3, session_id: 'x' })).not.toBeNull();
   });
 
   it('rejects non-array history', () => {
     expect(validateEscalateRequest({ ...validBody, history: 'not-an-array' })).not.toBeNull();
   });
 
+  it('rejects history exceeding 200 items', () => {
+    const bigHistory = Array.from({ length: 201 }, () => ({
+      agent: 'clive', agent_display_name: 'Clive', content: 'msg',
+    }));
+    expect(validateEscalateRequest({ ...validBody, history: bigHistory })).not.toBeNull();
+  });
+
+  it('rejects history item with invalid agent', () => {
+    expect(validateEscalateRequest({
+      ...validBody,
+      history: [{ agent: 'hacker', agent_display_name: 'X', content: 'hi' }],
+    })).not.toBeNull();
+  });
+
+  it('rejects history item with content exceeding 2000 chars', () => {
+    expect(validateEscalateRequest({
+      ...validBody,
+      history: [{ agent: 'clive', agent_display_name: 'Clive', content: 'a'.repeat(2001) }],
+    })).not.toBeNull();
+  });
+
   it('rejects missing drama_level', () => {
-    expect(validateEscalateRequest({ history: [] })).not.toBeNull();
+    expect(validateEscalateRequest({ history: [], session_id: 'x' })).not.toBeNull();
   });
 
   it('rejects non-number drama_level', () => {
@@ -201,5 +229,35 @@ describe('validateEscalateRequest', () => {
 
   it('rejects NaN drama_level', () => {
     expect(validateEscalateRequest({ ...validBody, drama_level: NaN })).not.toBeNull();
+  });
+
+  it('rejects drama_level below 1', () => {
+    expect(validateEscalateRequest({ ...validBody, drama_level: 0 })).not.toBeNull();
+  });
+
+  it('rejects drama_level above 100', () => {
+    expect(validateEscalateRequest({ ...validBody, drama_level: 101 })).not.toBeNull();
+  });
+
+  it('rejects missing session_id', () => {
+    expect(validateEscalateRequest({ history: [], drama_level: 3 })).not.toBeNull();
+  });
+
+  it('rejects session_id exceeding 100 chars', () => {
+    expect(validateEscalateRequest({ ...validBody, session_id: 'a'.repeat(101) })).not.toBeNull();
+  });
+
+  it('validates band_metadata structure when present', () => {
+    expect(validateEscalateRequest({
+      ...validBody,
+      band_metadata: { band_name: 'Test', genre: 'Rock', pitch: 'A band' },
+    })).toBeNull();
+  });
+
+  it('rejects invalid band_metadata', () => {
+    expect(validateEscalateRequest({
+      ...validBody,
+      band_metadata: { band_name: 123 },
+    })).not.toBeNull();
   });
 });
