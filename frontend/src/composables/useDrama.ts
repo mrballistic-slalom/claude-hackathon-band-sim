@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import type { AgentMessage, BandMetadata, GenerateRequest } from '../types';
 import { useSSEStream } from './useSSEStream';
 import { setFrontpersonAvatar } from '../config/agents';
@@ -24,6 +24,8 @@ export function useDrama() {
   const dramaLevel = ref(1);
   const isLoading = ref(false);
   const frontpersonName = ref('');
+  const frontpersonTraits = ref<[string, string, string]>(['passionate', 'misunderstood', 'visionary']);
+  const pettyLevel = ref(5);
   const sessionId = ref(crypto.randomUUID());
 
   /**
@@ -36,34 +38,47 @@ export function useDrama() {
    */
   async function generate(input: GenerateRequest): Promise<void> {
     frontpersonName.value = input.name;
+    frontpersonTraits.value = input.traits;
+    pettyLevel.value = input.petty_level;
     setFrontpersonAvatar(input.pronouns);
     screen.value = 'loading';
 
     const stream = useSSEStream();
 
-    // Watch for first message to transition to chat
-    const checkInterval = setInterval(() => {
-      if (stream.messages.value.length > 0 && screen.value === 'loading') {
+    // React to stream state changes instead of polling with setInterval.
+    const stopMessageWatch = watch(stream.messages, (msgs) => {
+      if (msgs.length > 0 && screen.value === 'loading') {
         screen.value = 'chat';
       }
-      // Sync messages
-      if (stream.messages.value.length > allMessages.value.length) {
-        allMessages.value = [...stream.messages.value];
+      if (msgs.length > allMessages.value.length) {
+        allMessages.value = [...msgs];
       }
-      if (stream.metadata.value) {
-        bandMetadata.value = stream.metadata.value;
+    });
+
+    const stopMetadataWatch = watch(stream.metadata, (meta) => {
+      if (meta) {
+        bandMetadata.value = meta;
       }
-      if (stream.isDone.value || stream.error.value) {
-        clearInterval(checkInterval);
-        isLoading.value = false;
-      }
-    }, 100);
+    });
+
+    const stopFinishedWatch = watch(
+      [stream.isDone, stream.error],
+      ([done, err]) => {
+        if (done || err) {
+          isLoading.value = false;
+        }
+      },
+    );
 
     isLoading.value = true;
     await stream.connect(`${API_BASE}/generate`, input);
-    clearInterval(checkInterval);
 
-    // Final sync
+    // Stop watchers now that the stream has fully resolved.
+    stopMessageWatch();
+    stopMetadataWatch();
+    stopFinishedWatch();
+
+    // Final sync to capture anything the watchers may not have flushed yet.
     allMessages.value = [...stream.messages.value];
     if (stream.metadata.value) {
       bandMetadata.value = stream.metadata.value;
@@ -89,28 +104,37 @@ export function useDrama() {
     const stream = useSSEStream();
     const baseCount = allMessages.value.length;
 
-    const checkInterval = setInterval(() => {
-      const newMessages = stream.messages.value;
-      if (newMessages.length > 0) {
+    // React to new messages and terminal states via watch instead of polling.
+    const stopMessageWatch = watch(stream.messages, (msgs) => {
+      if (msgs.length > 0) {
         allMessages.value = [
           ...allMessages.value.slice(0, baseCount),
-          ...newMessages,
+          ...msgs,
         ];
       }
-      if (stream.isDone.value || stream.error.value) {
-        clearInterval(checkInterval);
-        isLoading.value = false;
-      }
-    }, 100);
+    });
+
+    const stopFinishedWatch = watch(
+      [stream.isDone, stream.error],
+      ([done, err]) => {
+        if (done || err) {
+          isLoading.value = false;
+        }
+      },
+    );
 
     await stream.connect(`${API_BASE}/escalate`, {
       session_id: sessionId.value,
       history: allMessages.value.slice(0, baseCount),
       drama_level: dramaLevel.value,
       band_metadata: bandMetadata.value,
+      traits: frontpersonTraits.value,
+      petty_level: pettyLevel.value,
     });
 
-    clearInterval(checkInterval);
+    // Stop watchers now that the stream has fully resolved.
+    stopMessageWatch();
+    stopFinishedWatch();
 
     // Final sync
     allMessages.value = [

@@ -1,3 +1,4 @@
+import { reactive } from 'vue'
 import type { AgentId, Pronouns } from '../types'
 
 export interface AgentConfig {
@@ -10,7 +11,14 @@ export interface AgentConfig {
   avatarUrl: string | null
 }
 
-export const AGENT_CONFIG: Record<AgentId, AgentConfig> = {
+/**
+ * Reactive agent configuration map.
+ *
+ * Wrapped in Vue `reactive()` so that mutations (e.g. setting the
+ * frontperson avatar) are tracked and trigger re-renders in any
+ * component that reads from this object.
+ */
+export const AGENT_CONFIG: Record<AgentId, AgentConfig> = reactive({
   clive: {
     id: 'clive',
     displayName: 'Clive',
@@ -47,7 +55,7 @@ export const AGENT_CONFIG: Record<AgentId, AgentConfig> = {
     colorRgb: '239, 68, 68',
     avatarUrl: '/old-band-member.jpg',
   },
-}
+})
 
 export function setFrontpersonAvatar(pronouns: Pronouns): void {
   const map: Record<Pronouns, string> = {

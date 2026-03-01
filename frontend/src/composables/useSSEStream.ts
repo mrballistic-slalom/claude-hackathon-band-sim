@@ -47,7 +47,7 @@ export function parseSSEBuffer(buffer: string): { parsed: SSEEvent[]; remaining:
  * Composable that manages a Server-Sent Events stream for drama generation.
  *
  * Provides reactive refs for messages, metadata, streaming state, and errors,
- * plus `connect` and `reset` methods.
+ * plus `connect`, `cancel`, and `reset` methods.
  *
  * @returns Reactive SSE stream state and control functions.
  */
@@ -58,13 +58,27 @@ export function useSSEStream() {
   const isDone = ref(false);
   const error = ref<string | null>(null);
 
+  /** Active AbortController for the current in-flight stream, if any. */
+  let currentController: AbortController | null = null;
+
   /**
    * Open a POST-based SSE connection and incrementally parse events.
+   *
+   * If a stream is already in flight, it is aborted before starting the new one.
    *
    * @param url - API endpoint URL.
    * @param body - JSON-serialisable request body.
    */
   async function connect(url: string, body: object): Promise<void> {
+    // Abort any in-flight stream before starting a new one
+    if (currentController) {
+      currentController.abort();
+      currentController = null;
+    }
+
+    const controller = new AbortController();
+    currentController = controller;
+
     isStreaming.value = true;
     isDone.value = false;
     error.value = null;
@@ -74,6 +88,7 @@ export function useSSEStream() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -113,14 +128,35 @@ export function useSSEStream() {
         }
       }
     } catch (err: unknown) {
+      // AbortError is intentional (cancel or new stream replacing old one) — not a real error
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return;
+      }
       error.value = err instanceof Error ? err.message : 'Connection failed';
     } finally {
+      // Only clear the controller if it is still ours (a newer connect() may have replaced it)
+      if (currentController === controller) {
+        currentController = null;
+      }
       isStreaming.value = false;
+    }
+  }
+
+  /**
+   * Cancel the current in-flight stream, if any.
+   *
+   * This is a no-op if no stream is active.
+   */
+  function cancel(): void {
+    if (currentController) {
+      currentController.abort();
+      currentController = null;
     }
   }
 
   /** Reset all reactive state back to initial values. */
   function reset() {
+    cancel();
     messages.value = [];
     metadata.value = null;
     isStreaming.value = false;
@@ -128,5 +164,5 @@ export function useSSEStream() {
     error.value = null;
   }
 
-  return { messages, metadata, isStreaming, isDone, error, connect, reset };
+  return { messages, metadata, isStreaming, isDone, error, connect, cancel, reset };
 }

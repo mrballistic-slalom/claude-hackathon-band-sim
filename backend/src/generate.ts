@@ -6,6 +6,7 @@ import {
   getMargauxSystemPrompt,
   getExMemberSystemPrompt,
   getAgentDisplayName,
+  sanitizeUserInput,
 } from './prompts';
 
 function extractBandMetadata(cliveResponse: string, inputName: string): BandMetadata {
@@ -29,9 +30,15 @@ export async function handleGenerate(
   const messages: AgentMessage[] = [];
   let anySuccess = false;
 
+  // Sanitize user-supplied inputs before interpolation into prompts
+  const sanitizedName = sanitizeUserInput(input.name, 100);
+  const sanitizedTraits = Array.isArray(input.traits)
+    ? input.traits.map((t) => sanitizeUserInput(String(t), 50))
+    : [sanitizeUserInput(String(input.traits), 50)];
+
   // 1. Call Clive
   const cliveSystemPrompt = getCliveSystemPrompt();
-  const cliveInstruction = `You've just discovered a new artist named ${input.name}. Their defining traits are: ${input.traits.join(', ')}. Pitch the band concept to the group. You MUST include in your response: the band name (format: BAND NAME: <name>), a genre (format: GENRE: <genre>), a one-line pitch (format: PITCH: <pitch>), and 2-3 influences (format: INFLUENCES: <comma separated list>). After these details, give your A&R executive take on the commercial potential.`;
+  const cliveInstruction = `You've just discovered a new artist. Their name is: """${sanitizedName}""". Their defining traits are: """${sanitizedTraits.join(', ')}""". Pitch the band concept to the group. You MUST include in your response: the band name (format: BAND NAME: <name>), a genre (format: GENRE: <genre>), a one-line pitch (format: PITCH: <pitch>), and 2-3 influences (format: INFLUENCES: <comma separated list>). After these details, give your A&R executive take on the commercial potential.`;
 
   const cliveResponse = await callAgent(cliveSystemPrompt, messages, cliveInstruction);
 

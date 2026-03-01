@@ -50,5 +50,9 @@ export interface EscalateRequest {
   drama_level: number;
   /** Band metadata from the initial generation. */
   band_metadata: BandMetadata;
+  /** The frontperson's personality traits from the original input. */
+  traits?: [string, string, string];
+  /** Pettiness level from the original input (1-10). */
+  petty_level?: number;
 }
 

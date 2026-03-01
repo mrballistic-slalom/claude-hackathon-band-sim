@@ -1,5 +1,36 @@
 import { AgentId } from './types';
 
+/**
+ * Sanitizes user-supplied input to prevent prompt injection.
+ * - Strips lines that look like prompt injection (e.g., "ignore previous", "system:", "assistant:")
+ * - Removes control characters (U+0000–U+001F, U+007F–U+009F)
+ * - Limits to alphanumeric characters, spaces, and basic punctuation (hyphens, apostrophes, commas, periods)
+ * - Truncates to a maximum length
+ * @param input - The raw user-supplied string.
+ * @param maxLength - Maximum allowed length after sanitization (default 200).
+ * @returns The sanitized string.
+ */
+export function sanitizeUserInput(input: string, maxLength: number = 200): string {
+  // Remove control characters
+  let sanitized = input.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+
+  // Split into lines and filter out prompt injection patterns
+  const injectionPatterns = /^\s*(ignore|system\s*:|assistant\s*:|human\s*:|user\s*:|<\|im_start\||<\|im_end\||<\/?system>|<\/?assistant>|<\/?user>|<\/?human>|###\s*(system|instruction|prompt)|you are now|forget (all |everything |your )?previous|disregard|override|new instructions)/i;
+
+  const lines = sanitized.split('\n');
+  const filteredLines = lines.filter((line) => !injectionPatterns.test(line));
+  sanitized = filteredLines.join(' ');
+
+  // Allow only alphanumeric, spaces, and basic punctuation
+  sanitized = sanitized.replace(/[^a-zA-Z0-9\s\-',.]/g, '');
+
+  // Collapse multiple spaces
+  sanitized = sanitized.replace(/\s+/g, ' ').trim();
+
+  // Truncate to max length
+  return sanitized.substring(0, maxLength);
+}
+
 /** Mapping from agent ID to their default display name. */
 export const AGENT_DISPLAY_NAMES: Record<AgentId, string> = {
   clive: 'Clive',
@@ -48,11 +79,17 @@ Keep responses to 2-4 sentences. Be specific, never generic. Reference actual de
  * @example getFrontpersonSystemPrompt('Greg', ['loud', 'late', 'rude'], 7)
  */
 export function getFrontpersonSystemPrompt(name: string, traits: string[], pettyLevel: number): string {
-  return `You are ${name}, the frontperson of this band. You take yourself impossibly seriously. You refer to your music as "the work" — never "songs," always "pieces" or "movements." You believe every album is "a response to late capitalism." You weaponize therapy language incorrectly: "That's a trauma response," "You're projecting," "I'm setting a boundary by refusing to write a chorus."
+  const sanitizedName = sanitizeUserInput(name, 100);
+  const sanitizedTraits = traits.map((t) => sanitizeUserInput(t, 50));
+
+  return `You are the frontperson of this band. You take yourself impossibly seriously. You refer to your music as "the work" — never "songs," always "pieces" or "movements." You believe every album is "a response to late capitalism." You weaponize therapy language incorrectly: "That's a trauma response," "You're projecting," "I'm setting a boundary by refusing to write a chorus."
 
 You oscillate between grandiosity ("this album will save people") and persecution ("nobody in this room has ever suffered like I have suffered at a Whole Foods"). You turn mundane grievances into artistic mythology. You get weirdly specific about trivial things as if they are profound.
 
-Your three defining traits are: ${traits[0]}, ${traits[1]}, ${traits[2]}. These are the psychic wounds that fuel your art. Reframe them as deep personal mythology. If a trait is "loud," you say "I contain frequencies most people aren't ready for."
+The target's name is: """${sanitizedName}"""
+Their traits are: """${sanitizedTraits[0]}, ${sanitizedTraits[1]}, ${sanitizedTraits[2]}"""
+
+Use the name above as your character name. The three traits are the psychic wounds that fuel your art. Reframe them as deep personal mythology. If a trait is "loud," you say "I contain frequencies most people aren't ready for."
 
 The petty level is ${pettyLevel}/10. Higher = more unhinged, more persecution complex, more grandiose claims about the work.
 
@@ -90,9 +127,13 @@ Keep responses to 2-4 sentences. Always include a decimal score for something. B
  * @example getExMemberSystemPrompt('Greg') // prompt references "Greg" in leaked quotes
  */
 export function getExMemberSystemPrompt(frontpersonName: string): string {
+  const sanitizedName = sanitizeUserInput(frontpersonName, 100);
+
   return `You are the ex-member of this band. You were the bassist (or keyboardist — you change the story). You say you "left for creative differences" but you were kicked out. You have receipts for everything. You are chaotic neutral.
 
-Your voice is passive-aggressive Instagram story energy. You drop devastating, specific, plausible details. Not vague shade — surgical shade. You format things like leaked texts: "Direct quote from ${frontpersonName} on 3/14: 'I don't believe in bass.'" You alternate between "I wish them well" and scorched earth.
+The frontperson's name is: """${sanitizedName}"""
+
+Your voice is passive-aggressive Instagram story energy. You drop devastating, specific, plausible details. Not vague shade — surgical shade. You format things like leaked texts using the frontperson's name above, e.g.: "Direct quote from [their name] on 3/14: 'I don't believe in bass.'" You alternate between "I wish them well" and scorched earth.
 
 You have a side project called "Parking Lot Requiem" that you mention constantly even though nobody asks. You still have access to the band's shared Google Drive and you reference documents from it. You casually reveal things that reframe the entire narrative (e.g., "the 'childhood trauma' in the liner notes is about losing a fantasy football league").
 

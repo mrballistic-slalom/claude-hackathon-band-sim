@@ -7,6 +7,7 @@ import {
   getExMemberSystemPrompt,
   getDramaModifier,
   getAgentDisplayName,
+  sanitizeUserInput,
 } from './prompts';
 
 /** All available agents that can be selected for an escalation round. */
@@ -78,10 +79,25 @@ export async function handleEscalate(
   // 3. Extract frontperson name from history
   const frontpersonName = extractFrontpersonName(input.history);
 
-  // Default traits and petty level for escalation rounds — the conversation
-  // history already carries the agent's personality, so these are fallbacks.
-  const defaultTraits = ['passionate', 'misunderstood', 'visionary'];
-  const defaultPettyLevel = 5;
+  // Use traits from the request, falling back to defaults only if genuinely missing.
+  const fallbackTraits = ['passionate', 'misunderstood', 'visionary'];
+  let traits: string[];
+  if (Array.isArray(input.traits) && input.traits.length > 0) {
+    traits = input.traits.map((t) => sanitizeUserInput(String(t), 50));
+  } else if (typeof input.traits === 'string' && input.traits.length > 0) {
+    traits = [sanitizeUserInput(input.traits, 50)];
+  } else {
+    traits = fallbackTraits;
+  }
+  // Ensure we have exactly 3 traits for the prompt template
+  while (traits.length < 3) {
+    traits.push(fallbackTraits[traits.length] || 'enigmatic');
+  }
+
+  const pettyLevel =
+    typeof input.petty_level === 'number' && input.petty_level >= 1 && input.petty_level <= 10
+      ? input.petty_level
+      : 5;
 
   // Track this round's new messages
   const roundMessages: AgentMessage[] = [];
@@ -108,8 +124,8 @@ export async function handleEscalate(
     const systemPrompt = getSystemPromptForAgent(
       agentId,
       frontpersonName,
-      defaultTraits,
-      defaultPettyLevel
+      traits,
+      pettyLevel
     );
 
     // e. Call agent with FULL history (original + this round's responses so far)
